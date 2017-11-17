@@ -11,3 +11,6 @@ name = "pypi"
 
 [packages]
 
+sqlalchemy = "*"
+tornado = "*"
+"psycopg2" = "*"
