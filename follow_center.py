@@ -5,36 +5,50 @@ import json
 sys.path.append("../lib_py")
 import json_bz
 
-
 import db_bz
 import tornado.ioloop
 import tornado.web
 import tornado_bz
 from tornado_bz import BaseHandler
-# from webpy_db import SQLLiteral
 
 import proxy
 import anki
+import tornado_web_bz
+
+
+class main(BaseHandler):
+    '''
+    首页
+    create by bigzhu at 15/07/11 16:21:16
+    '''
+
+    @tornado_bz.mustLoginJson
+    def get(self, limit=None):
+        # self.render(tornado_bz.getTName(self, 'app'))
+        self.redirect('/app/')
+
+
+class web_socket(tornado_web_bz.web_socket):
+    pass
 
 
 class api_sp(proxy.ProxyHandler):
-
     '''
     create by bigzhu at 15/08/05 22:52:44 加密方式传递url
     '''
 
     def get(self, secret):
         url = proxy.decodeUrl(secret)
-        print ('proxy ', url)
+        print('proxy ', url)
         return super(api_sp, self).get(url)
 
 
 class api_login_anki(BaseHandler):
+    '''
+    '''
 
-    '''
-    '''
-    @tornado_bz.handleError
-    @tornado_bz.mustLoginApi
+    @tornado_bz.handleErrorJson
+    @tornado_bz.mustLoginJson
     def post(self):
         self.set_header("Content-Type", "application/json")
         data = json.loads(self.request.body)
@@ -42,17 +56,18 @@ class api_login_anki(BaseHandler):
         anki_info.user_name = data['user_name']
         anki_info.password = data['password']
         anki_info.user_id = self.current_user
-        db_bz.insertOrUpdate(pg, 'anki', anki_info, "user_id='%s'" % anki_info.user_id)
+        db_bz.insertOrUpdate(pg, 'anki', anki_info,
+                             "user_id='%s'" % anki_info.user_id)
         anki.getMidAndCsrfTokenHolder(anki_info.user_id, reset_cookie=True)
         self.write(json.dumps(self.data))
 
 
 class api_anki(BaseHandler):
+    '''
+    '''
 
-    '''
-    '''
-    @tornado_bz.handleError
-    @tornado_bz.mustLoginApi
+    @tornado_bz.handleErrorJson
+    @tornado_bz.mustLoginJson
     def post(self):
         self.set_header("Content-Type", "application/json")
         data = json.loads(self.request.body)
@@ -62,8 +77,8 @@ class api_anki(BaseHandler):
         oper.anki_save(message_id, self.current_user)
         self.write(json.dumps(self.data))
 
-    @tornado_bz.handleError
-    @tornado_bz.mustLoginApi
+    @tornado_bz.handleErrorJson
+    @tornado_bz.mustLoginJson
     def get(self):
         self.set_header("Content-Type", "application/json")
         sql = 'select user_name, password from anki where user_id=$user_id'
@@ -72,15 +87,19 @@ class api_anki(BaseHandler):
             data = datas[0]
         else:
             data = None
-        self.write(json.dumps({'error': '0', 'anki': data}, cls=json_bz.ExtEncoder))
+        self.write(
+            json.dumps({
+                'error': '0',
+                'anki': data
+            }, cls=json_bz.ExtEncoder))
 
 
 class NoCacheHtmlStaticFileHandler(tornado.web.StaticFileHandler):
-
     def set_extra_headers(self, path):
         if path == '':
             # self.set_header("Cache-control", "no-cache")
-            self.set_header("Cache-control", "no-store, no-cache, must-revalidate, max-age=0")
+            self.set_header("Cache-control",
+                            "no-store, no-cache, must-revalidate, max-age=0")
 
 
 if __name__ == "__main__":
@@ -93,7 +112,7 @@ if __name__ == "__main__":
         port = int(sys.argv[1])
     else:
         port = 9444
-    print (port)
+    print(port)
 
     web_class = tornado_bz.getAllWebBzRequestHandlers()
     web_class.update(globals().copy())
@@ -104,14 +123,16 @@ if __name__ == "__main__":
     # sitemap
     # url_map.append((r'/sitemap.xml()', tornado.web.StaticFileHandler, {'path': "./static/sitemap.xml"}))
 
-    url_map.append((r"/app/(.*)", NoCacheHtmlStaticFileHandler, {"path": "../", "default_filename": "index.html"}))
+    url_map.append((r"/app/(.*)", NoCacheHtmlStaticFileHandler, {
+        "path": "../",
+        "default_filename": "index.html"
+    }))
     url_map.append((r'/web_socket', web_socket))
-    url_map.append((r'/biography.html', biography))
     url_map.append((r'/', main))
     # url_map.append((r'/static/(.*)', tornado.web.StaticFileHandler, {'path': "./static"}))
 
     settings = tornado_bz.getSettings()
-    settings["pg"] = pg
+    # settings["pg"] = pg
     if debug:
         settings["disable_sp"] = True
     else:
