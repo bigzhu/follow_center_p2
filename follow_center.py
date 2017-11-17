@@ -13,9 +13,7 @@ import tornado_bz
 from tornado_bz import BaseHandler
 # from webpy_db import SQLLiteral
 
-from db_bz import pg
 import proxy
-from public_bz import storage
 import anki
 
 

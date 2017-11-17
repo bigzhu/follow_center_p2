@@ -19,6 +19,7 @@ class Anki(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)  # 建立时间
     updated_at = Column(DateTime, default=datetime.datetime.utcnow)  # update 时间
 
+    user_id = Column(Text, nullable=False)
     user_name = Column(Text, nullable=False)
     password = Column(Text, nullable=False)
     csrf_token = Column(Text)
@@ -27,5 +28,6 @@ class Anki(Base):
 
 
 if __name__ == '__main__':
+    Anki.__table__.drop(checkfirst=True)
     import doctest
     doctest.testmod(verbose=False, optionflags=doctest.ELLIPSIS)
