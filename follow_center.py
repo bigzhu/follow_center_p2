@@ -80,18 +80,17 @@ class api_anki(BaseHandler):
     @tornado_bz.handleErrorJson
     @tornado_bz.mustLoginJson
     def get(self):
+        """
+        @api {get} /api_anki 取anki用户信息
+        @apiGroup anki
+        @apiSuccess {Number} id id
+        @apiSuccess {String} name anki 用户名
+        """
         self.set_header("Content-Type", "application/json")
-        sql = 'select user_name, password from anki where user_id=$user_id'
-        datas = pg.query(sql, vars={'user_id': self.current_user})
-        if datas:
-            data = datas[0]
-        else:
-            data = None
-        self.write(
-            json.dumps({
-                'error': '0',
-                'anki': data
-            }, cls=json_bz.ExtEncoder))
+        # sql = 'select user_name, password from anki where user_id=$user_id'
+        print(self.current_user)
+        data = anki.getAnkiConfig(self.current_user)
+        self.write(json.dumps(data, cls=json_bz.ExtEncoder))
 
 
 class NoCacheHtmlStaticFileHandler(tornado.web.StaticFileHandler):

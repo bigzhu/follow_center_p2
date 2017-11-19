@@ -5,11 +5,10 @@ sys.path.append("../lib_py")
 import datetime
 from sqlalchemy import Column, Integer, Text, DateTime
 
-from model_bz import Base
+import model_bz
 
 
-class Anki(Base):
-
+class Anki(model_bz.Base):
     '''
     anki 的登录信息
     >>> Anki.__table__.create(checkfirst=True)
@@ -17,7 +16,8 @@ class Anki(Base):
     __tablename__ = 'anki'
     id = Column(Integer, primary_key=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)  # 建立时间
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)  # update 时间
+    updated_at = Column(
+        DateTime, default=datetime.datetime.utcnow)  # update 时间
 
     user_id = Column(Text, nullable=False)
     user_name = Column(Text, nullable=False)
@@ -27,7 +27,15 @@ class Anki(Base):
     cookie = Column(Text)
 
 
+def createNeed():
+    '''
+    建立要用的表
+    >>> createNeed()
+    '''
+    model_bz.OauthInfo.__table__.create(checkfirst=True)
+    Anki.__table__.create(checkfirst=True)
+
+
 if __name__ == '__main__':
-    Anki.__table__.drop(checkfirst=True)
     import doctest
     doctest.testmod(verbose=False, optionflags=doctest.ELLIPSIS)
