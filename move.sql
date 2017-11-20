@@ -23,3 +23,13 @@ INSERT INTO public.message(
 	id, created_at, updated_at, god_id, god_name, name, out_id, m_type, out_created_at, content, text, title, extended_entities, href, type)
 SELECT id, created_date, stat_date, god_id, god_name, name, id_str, m_type, created_at, content, text, title, extended_entities, href, type
 	FROM public_save.message;
+
+INSERT INTO public.anki_save(
+	id, created_at, updated_at, user_id, message_id)
+SELECT id, created_date, stat_date, user_id, message_id
+	FROM public_save.anki_save where message_id in (select id from message);
+
+INSERT INTO public.god(
+	id, created_at, updated_at, name, bio, twitter, github, instagram, tumblr, facebook, cat, is_public, is_black)
+SELECT id, created_date, stat_date, name, bio, twitter, github, instagram, tumblr, facebook, cat, is_public, is_black
+	FROM public_save.god;

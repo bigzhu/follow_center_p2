@@ -4,6 +4,7 @@ import sys
 import json
 sys.path.append("../lib_py")
 import json_bz
+from sqlalchemy import or_
 
 import db_bz
 import tornado.ioloop
@@ -17,6 +18,8 @@ import time_bz
 import model
 import anki
 import proxy
+from model import Message, Collect, AnkiSave, God
+all_message = db_bz.getReflect('all_message')
 
 
 class api_new(BaseHandler):
@@ -54,7 +57,41 @@ class api_new(BaseHandler):
             else:
                 after = None
 
-        messages = public_db.getNewMessages(user_id=user_id, after=after, limit=limit, god_name=god_name, search_key=search_key)
+        if user_id:
+            # 取出这个用户的收藏
+            collect_sq = session.query(Collect).filter(Collect.user_id == user_id).subquery()
+            # 附加收藏到 message 里
+            query = session.query(all_message, collect_sq.c.message_id.label('collect'), collect_sq.c.created_at.label('collect_at')).outerjoin(collect_sq, all_message.c.id == collect_sq.c.message_id).subquery()
+            # 取出这个用户的anki
+            anki_sq = session.query(AnkiSave).filter(AnkiSave.user_id == user_id).subquery()
+            # 附加 anki 到 message
+            query = session.query(query, anki_sq.c.message_id.label('anki'), anki_sq.c.created_at.label('anki_at')).outerjoin(anki_sq, query.c.id == anki_sq.c.message_id).subquery()
+        else:
+            # 不要 18+ 的
+            query = session.query(all_message).filter(all_message.c.cat != '18+').subquery()
+            # 只要 public 的
+            query = session.query(query).filter(query.c.god_name.in_(session.query(God.name).filter(God.is_public.in_([1, 2])))).subquery()
+
+        # 查比这个时间新的
+        if after:
+            query = session.query(query).filter(query.c.out_created_at > after).subquery()
+
+        # 互斥的filter_bz.filter
+        if god_name:
+            query = session.query(query).filter(query.c.god_name == god_name)
+        elif search_key:
+            # jsonb 没找到办法做like
+            #query = session.query(query).filter(or_(query.c.text.ilike('%%%s%%' % search_key), query.c.content.astext.like('%%%s%%' % search_key))).subquery()
+            query = session.query(query).filter(or_(query.c.text.ilike('%%%s%%' % search_key))).subquery()
+
+        '''
+            # sql += " where upper(s.text) like '%%%s%%' or upper(s.content::text) like '%%%s%%' " % (search_key.upper(), search_key.upper())
+            sql = filter_bz.filterSearchKey(sql, search_key)
+        else:
+            sql = filter_bz.filterFollowedMessages(sql, user_id)
+        '''
+
+        # messages = public_db.getNewMessages(user_id=user_id, after=after, limit=limit, god_name=god_name, search_key=search_key)
         data = dict(messages=messages, unread_message_count=oper.getUnreadCount(user_id))
         if (len(messages) == 0):
             if (user_id):

@@ -10,6 +10,7 @@ drop VIEW all_message;
     m.name,
     m.out_id,
     m.m_type,
+    m.out_created_at,
     m.created_at,
     m.content,
     m.text,

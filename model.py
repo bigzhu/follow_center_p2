@@ -8,6 +8,20 @@ from sqlalchemy.dialects.postgresql import JSONB
 import model_bz
 
 
+class AnkiSave(model_bz.Base):
+    '''
+    标记是否发到anki
+    >>> AnkiSave.__table__.create(checkfirst=True)
+    '''
+    __tablename__ = 'anki_save'
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    user_id = Column(Text, nullable=False)
+
+    message_id = Column(Integer, ForeignKey('message.id'), nullable=False)
+
+
 class God(model_bz.Base):
     '''
     god 的信息 create by bigzhu at 16/05/24 10:01:39
