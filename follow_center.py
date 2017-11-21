@@ -18,7 +18,8 @@ import time_bz
 import model
 import anki
 import proxy
-from model import Message, Collect, AnkiSave, God
+import filter
+from model import Collect, AnkiSave, God, FollowWho
 all_message = db_bz.getReflect('all_message')
 
 
@@ -36,45 +37,59 @@ class api_new(BaseHandler):
         session = db_bz.getSession()
 
         self.set_header("Content-Type", "application/json")
-        after = None
-        limit = None
-        search_key = None
-        god_name = None
-        if parm:
-            parm = json.loads(parm)
-            after = parm.get('after')  # 晚于这个时间的
-            limit = parm.get('limit')
-            search_key = parm.get('search_key')
-            god_name = parm.get('god_name')  # 只查这个god
+
+        after = self.get_argument('after', None)  # 晚于这个时间的
+        limit = self.get_argument('limit', 10)
+        search_key = self.get_argument('search_key', None)
+        god_name = self.get_argument('god_name', None)
 
         user_id = self.current_user
+
+        unread_message_count = 0
         if after:
             after = time_bz.timestampToDateTime(after, True)
         elif search_key is None and god_name is None:  # 按 search 和 god 查时, 不必取 last
-            after = session.query(model.Last.updated_at).filter(model.Last.user_id == user_id).all()
+            after = session.query(model.Last.updated_at).filter(
+                model.Last.user_id == user_id).all()
             if after:
                 after = after[0]
             else:
                 after = None
 
         if user_id:
+            # 取出未读的数量
             # 取出这个用户的收藏
-            collect_sq = session.query(Collect).filter(Collect.user_id == user_id).subquery()
+            collect_sq = session.query(Collect).filter(
+                Collect.user_id == user_id).subquery()
             # 附加收藏到 message 里
-            query = session.query(all_message, collect_sq.c.message_id.label('collect'), collect_sq.c.created_at.label('collect_at')).outerjoin(collect_sq, all_message.c.id == collect_sq.c.message_id).subquery()
+            query = session.query(
+                all_message, collect_sq.c.message_id.label('collect'),
+                collect_sq.c.created_at.label('collect_at')).outerjoin(
+                    collect_sq,
+                    all_message.c.id == collect_sq.c.message_id).subquery()
             # 取出这个用户的anki
-            anki_sq = session.query(AnkiSave).filter(AnkiSave.user_id == user_id).subquery()
+            anki_sq = session.query(AnkiSave).filter(
+                AnkiSave.user_id == user_id).subquery()
             # 附加 anki 到 message
-            query = session.query(query, anki_sq.c.message_id.label('anki'), anki_sq.c.created_at.label('anki_at')).outerjoin(anki_sq, query.c.id == anki_sq.c.message_id).subquery()
+            query = session.query(
+                query, anki_sq.c.message_id.label('anki'),
+                anki_sq.c.created_at.label('anki_at')).outerjoin(
+                    anki_sq, query.c.id == anki_sq.c.message_id).subquery()
         else:
             # 不要 18+ 的
-            query = session.query(all_message).filter(all_message.c.cat != '18+').subquery()
+            query = session.query(all_message).filter(
+                all_message.c.cat != '18+').subquery()
             # 只要 public 的
-            query = session.query(query).filter(query.c.god_name.in_(session.query(God.name).filter(God.is_public.in_([1, 2])))).subquery()
+            query = session.query(query).filter(
+                query.c.god_name.in_(
+                    session.query(God.name).filter(God.is_public.in_(
+                        [1, 2])))).subquery()
 
+        # after = None
         # 查比这个时间新的
         if after:
-            query = session.query(query).filter(query.c.out_created_at > after).subquery()
+            query = session.query(query).filter(
+                query.c.out_created_at > after).subquery()
 
         # 互斥的filter_bz.filter
         if god_name:
@@ -82,20 +97,31 @@ class api_new(BaseHandler):
         elif search_key:
             # jsonb 没找到办法做like
             #query = session.query(query).filter(or_(query.c.text.ilike('%%%s%%' % search_key), query.c.content.astext.like('%%%s%%' % search_key))).subquery()
-            query = session.query(query).filter(or_(query.c.text.ilike('%%%s%%' % search_key))).subquery()
+            query = session.query(query).filter(
+                or_(query.c.text.ilike('%%%s%%' % search_key))).subquery()
+        elif user_id:  # 没那几个, 又有 user_id, 只查关注了的
+            ## 查出还有多少未读
+            if after:
+                unread_query = filter.filterFollowedMessage(
+                    all_message, session, user_id)
+                unread_query = session.query(unread_query).filter(
+                    unread_query.c.out_created_at > after).subquery()
+                unread_message_count = session.query(unread_query).count()
 
-        '''
-            # sql += " where upper(s.text) like '%%%s%%' or upper(s.content::text) like '%%%s%%' " % (search_key.upper(), search_key.upper())
-            sql = filter_bz.filterSearchKey(sql, search_key)
-        else:
-            sql = filter_bz.filterFollowedMessages(sql, user_id)
-        '''
+            query = filter.filterFollowedMessage(query, session, user_id)
 
-        # messages = public_db.getNewMessages(user_id=user_id, after=after, limit=limit, god_name=god_name, search_key=search_key)
-        data = dict(messages=messages, unread_message_count=oper.getUnreadCount(user_id))
+        # query = session.query(query).order_by(query.c.out_created_at).limit(limit)
+        query = session.query(query).order_by(query.c.out_created_at).limit(10)
+        #print(query.statement.compile(compile_kwargs={"literal_binds": True}))
+        messages = query.all()
+        messages = [r._asdict() for r in messages]
+        data = dict(
+            messages=messages, unread_message_count=unread_message_count)
+
         if (len(messages) == 0):
             if (user_id):
-                data['followed_god_count'] = god_oper.getFollowedGodCount(user_id)
+                data['followed_god_count'] = session.query(FollowWho).filter(
+                    FollowWho.user_id == user_id).count()
             else:
                 data['followed_god_count'] = 0
 
@@ -130,7 +156,8 @@ class api_login_anki(BaseHandler):
         anki_info.user_name = data['user_name']
         anki_info.password = data['password']
         anki_info.user_id = self.current_user
-        db_bz.insertOrUpdate(pg, 'anki', anki_info, "user_id='%s'" % anki_info.user_id)
+        db_bz.insertOrUpdate(pg, 'anki', anki_info,
+                             "user_id='%s'" % anki_info.user_id)
         anki.getMidAndCsrfTokenHolder(anki_info.user_id, reset_cookie=True)
         self.write(json.dumps(self.data))
 
@@ -170,7 +197,8 @@ class NoCacheHtmlStaticFileHandler(tornado.web.StaticFileHandler):
     def set_extra_headers(self, path):
         if path == '':
             # self.set_header("Cache-control", "no-cache")
-            self.set_header("Cache-control", "no-store, no-cache, must-revalidate, max-age=0")
+            self.set_header("Cache-control",
+                            "no-store, no-cache, must-revalidate, max-age=0")
 
 
 if __name__ == "__main__":
@@ -194,7 +222,10 @@ if __name__ == "__main__":
     # sitemap
     # url_map.append((r'/sitemap.xml()', tornado.web.StaticFileHandler, {'path': "./static/sitemap.xml"}))
 
-    url_map.append((r"/app/(.*)", NoCacheHtmlStaticFileHandler, {"path": "../", "default_filename": "index.html"}))
+    url_map.append((r"/app/(.*)", NoCacheHtmlStaticFileHandler, {
+        "path": "../",
+        "default_filename": "index.html"
+    }))
     url_map.append((r'/web_socket', web_socket))
     # url_map.append((r'/static/(.*)', tornado.web.StaticFileHandler, {'path': "./static"}))
 

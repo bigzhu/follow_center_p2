@@ -33,3 +33,9 @@ INSERT INTO public.god(
 	id, created_at, updated_at, name, bio, twitter, github, instagram, tumblr, facebook, cat, is_public, is_black)
 SELECT id, created_date, stat_date, name, bio, twitter, github, instagram, tumblr, facebook, cat, is_public, is_black
 	FROM public_save.god;
+
+INSERT INTO public.follow_who(
+	id, created_at, updated_at, user_id, god_id)
+SELECT id, created_date, stat_date, user_id, god_id
+	FROM public_save.follow_who;
+
