@@ -20,7 +20,25 @@ import anki
 import proxy
 import filter
 from model import Collect, AnkiSave, God, FollowWho
+from model_bz import OauthInfo
 all_message = db_bz.getReflect('all_message')
+
+
+class api_registered(BaseHandler):
+    '''
+    注册的用户数
+    '''
+
+    @tornado_bz.handleErrorJson
+    def get(self):
+        self.set_header("Content-Type", "application/json")
+        session = db_bz.getSession()
+        registered_count = session.query(OauthInfo).count()
+        self.write(
+            json.dumps(
+                {
+                    'registered_count': registered_count
+                }, cls=json_bz.ExtEncoder))
 
 
 class api_new(BaseHandler):
