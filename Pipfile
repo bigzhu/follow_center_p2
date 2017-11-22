@@ -11,8 +11,13 @@ name = "pypi"
 
 [packages]
 
-sqlalchemy = "*"
 tornado = "*"
 "psycopg2" = "*"
 requests = "*"
 "bs4" = "*"
+sqlalchemy = "*"
+
+
+[pipenv]
+
+allow_prereleases = true
