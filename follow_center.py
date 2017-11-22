@@ -58,14 +58,22 @@ class api_registered(BaseHandler):
 
 
 class api_new(BaseHandler):
-    '''
+    """
     create by bigzhu at 15/08/17 11:12:24 查看我订阅了的message，要定位到上一次看的那条
     modify by bigzhu at 15/11/17 16:22:05 最多查1000出来
     modify by bigzhu at 15/11/17 19:18:25 不要在这里限制条目数
     modify by bigzhu at 16/02/21 10:02:25 改为get
     modify by bigzhu at 16/04/29 14:54:37 支持关键字查找
     modify by bigzhu at 16/05/28 23:10:05 重构
-    '''
+
+    @apiGroup message
+    @api {get} /api_new 取新的社交信息
+    @apiParam {String} after 只查在这个时间以后的
+    @apiParam {Number} limit 数量限制
+    @apiParam {String} search_key 搜索关键字
+    @apiParam {String} god_name 只看这个人的
+
+    """
 
     def get(self, parm=None):
         session = db_bz.getSession()
@@ -145,7 +153,7 @@ class api_new(BaseHandler):
             query = filter.filterFollowedMessage(query, session, user_id)
 
         # query = session.query(query).order_by(query.c.out_created_at).limit(limit)
-        query = session.query(query).order_by(query.c.out_created_at).limit(10)
+        query = session.query(query).order_by(query.c.out_created_at).limit(limit)
         #print(query.statement.compile(compile_kwargs={"literal_binds": True}))
         messages = query.all()
         messages = [r._asdict() for r in messages]
