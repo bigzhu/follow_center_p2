@@ -24,6 +24,22 @@ from model_bz import OauthInfo
 all_message = db_bz.getReflect('all_message')
 
 
+class api_login(BaseHandler):
+    @tornado_bz.handleErrorJson
+    def post(self):
+        self.set_header("Content-Type", "application/json")
+        login_info = json.loads(self.request.body)
+        user_name = login_info.get("user_name")
+        # password = login_info.get("password")
+        session = db_bz.getSession()
+        user_info = session.query(OauthInfo).filter(
+            OauthInfo.name == user_name, OauthInfo.type == 'github').one_or_none()
+        if user_info is None:
+            raise Exception('没有用户 %s' % user_name)
+        self.set_secure_cookie("user_id", str(user_info.id))
+        self.write(json.dumps({'error': '0'}))
+
+
 class api_registered(BaseHandler):
     '''
     注册的用户数
