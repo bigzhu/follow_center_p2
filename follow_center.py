@@ -22,7 +22,61 @@ import filter
 from model import Collect, AnkiSave, God, FollowWho
 from model_bz import OauthInfo
 from sqlalchemy import and_, func
+import add
 all_message = db_bz.getReflect('all_message')
+
+
+class api_collect(BaseHandler):
+    '''
+    create by bigzhu at 16/05/20 14:17:20 收藏
+    '''
+
+    @tornado_bz.handleErrorJson
+    @tornado_bz.mustLoginJson
+    def post(self):
+        self.set_header("Content-Type", "application/json")
+        parm = json.loads(self.request.body)
+        message_id = parm['message_id']
+        collect_oper.collect(message_id, self.current_user)
+        self.write(json.dumps({'error': '0'}))
+
+    @tornado_bz.handleErrorJson
+    @tornado_bz.mustLoginJson
+    def delete(self, id):
+        self.set_header("Content-Type", "application/json")
+        count = pg.delete(
+            'collect',
+            where="user_id='%s' and message_id=%s" % (self.current_user, id))
+        if count != 1:
+            raise Exception('没有正确的uncollect, uncollect %s 条' % count)
+        self.write(json.dumps({'error': '0'}))
+
+    @tornado_bz.handleErrorJson
+    @tornado_bz.mustLoginJson
+    def get(self):
+        self.set_header("Content-Type", "application/json")
+        session = db_bz.session_for_get
+        session.query(all_message)
+
+    #sql = '''
+    #select * from all_message m
+    #'''
+    #sql = add_bz.messagesCollect(sql, user_id)
+    #sql = add_bz.messagesAnkiSave(sql, user_id)
+    #sql = '''
+    #select * from (%s) s
+    #where collect is not null
+    #''' % sql
+    ## order by
+    #sql += ' order by collect_date desc '
+
+        messages = public_db.getCollectMessages(user_id=self.current_user)
+        self.write(
+            json.dumps(
+                {
+                    'error': '0',
+                    'messages': messages
+                }, cls=json_bz.ExtEncoder))
 
 
 class api_gods(BaseHandler):
@@ -169,18 +223,11 @@ class api_new(BaseHandler):
                 after = after[0]
             else:
                 after = None
+        sql = session.query(all_message).subquery()
 
         if user_id:
             # 取出未读的数量
-            # 取出这个用户的收藏
-            collect_sq = session.query(Collect).filter(
-                Collect.user_id == user_id).subquery()
-            # 附加收藏到 message 里
-            query = session.query(
-                all_message, collect_sq.c.message_id.label('collect'),
-                collect_sq.c.created_at.label('collect_at')).outerjoin(
-                    collect_sq,
-                    all_message.c.id == collect_sq.c.message_id).subquery()
+            query = add.addCollectMessage(sql, user_id)
             # 取出这个用户的anki
             anki_sq = session.query(AnkiSave).filter(
                 AnkiSave.user_id == user_id).subquery()
@@ -217,12 +264,12 @@ class api_new(BaseHandler):
             ## 查出还有多少未读
             if after:
                 unread_query = filter.filterFollowedMessage(
-                    all_message, session, user_id)
+                    all_message, user_id)
                 unread_query = session.query(unread_query).filter(
                     unread_query.c.out_created_at > after).subquery()
                 unread_message_count = session.query(unread_query).count()
 
-            query = filter.filterFollowedMessage(query, session, user_id)
+            query = filter.filterFollowedMessage(query, user_id)
 
         # query = session.query(query).order_by(query.c.out_created_at).limit(limit)
         query = session.query(query).order_by(

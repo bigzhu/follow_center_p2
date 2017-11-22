@@ -4,10 +4,11 @@
 一些复用的filter
 '''
 
+from db_bz import session_for_get as session
 from model import God, FollowWho
 
 
-def filterFollowedMessage(query, session, user_id):
+def filterFollowedMessage(query, user_id):
     '''
     查出这个用户关注的, 返回 subquery
     >>> import db_bz
