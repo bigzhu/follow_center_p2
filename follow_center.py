@@ -25,6 +25,41 @@ from sqlalchemy import and_, func
 all_message = db_bz.getReflect('all_message')
 
 
+class api_gods(BaseHandler):
+    '''
+    create by bigzhu at 16/12/11 22:32:39 公开推荐的god
+    '''
+
+    @tornado_bz.handleErrorJson
+    def get(self):
+
+        self.set_header("Content-Type", "application/json")
+        cat = self.get_argument('cat', None)
+        before = self.get_argument('before', None)
+        limit = self.get_argument('limit', 6)
+        is_public = self.get_argument('is_public', None)
+        user_id = self.current_user
+        session = db_bz.session_for_get
+
+        sql = session.query(God)
+        if cat:
+            sql = sql.filter(God.cat == cat)
+        if before:
+            sql = sql.filter(God.created_at < before)
+        if is_public:
+            sql = sql.filter(God.is_public == 1)
+        ## 只看本人关注的
+        elif user_id:
+            my_god = session.query(
+                FollowWho.god_id).filter(FollowWho.user_id == user_id)
+            sql = sql.filter(God.id.in_(my_god))
+        else:
+            raise Exception('未登录, 无法看私人关注!')
+        data = sql.limit(limit).all()
+        # data = [r._asdict() for r in data]
+        self.write(json.dumps(data, cls=json_bz.ExtEncoder))
+
+
 class api_cat(BaseHandler):
     @tornado_bz.handleErrorJson
     def get(self):
@@ -34,7 +69,7 @@ class api_cat(BaseHandler):
         self.set_header("Content-Type", "application/json")
         is_my = self.get_argument('is_my', 0)
         user_id = self.current_user
-        session = db_bz.getSession()
+        session = db_bz.session_for_get
         ## 所有 social 都是空的废 god
         null_god = session.query(God.id).filter(
             and_(
@@ -52,8 +87,9 @@ class api_cat(BaseHandler):
                 sql = sql.filter(God.cat != '18+')
         sub_sql = sql.subquery()
 
-        data = session.query(func.count(sub_sql.c.cat).label('count'),
-                             sub_sql.c.cat).group_by(sub_sql.c.cat).all()
+        data = session.query(
+            func.count(sub_sql.c.cat).label('count'), sub_sql.c.cat).group_by(
+                sub_sql.c.cat).all()
 
         data = [r._asdict() for r in data]
 
@@ -67,7 +103,7 @@ class api_login(BaseHandler):
         login_info = json.loads(self.request.body)
         user_name = login_info.get("user_name")
         # password = login_info.get("password")
-        session = db_bz.getSession()
+        session = db_bz.session_for_get
         user_info = session.query(OauthInfo).filter(
             OauthInfo.name == user_name,
             OauthInfo.type == 'github').one_or_none()
@@ -85,7 +121,7 @@ class api_registered(BaseHandler):
     @tornado_bz.handleErrorJson
     def get(self):
         self.set_header("Content-Type", "application/json")
-        session = db_bz.getSession()
+        session = db_bz.session_for_get
         registered_count = session.query(OauthInfo).count()
         self.write(
             json.dumps(
@@ -112,7 +148,7 @@ class api_new(BaseHandler):
     """
 
     def get(self, parm=None):
-        session = db_bz.getSession()
+        session = db_bz.session_for_get
 
         self.set_header("Content-Type", "application/json")
 
