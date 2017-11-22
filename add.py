@@ -4,7 +4,21 @@
 附件信息
 '''
 from db_bz import session_for_get as session
-from model import God, Collect
+from model import AnkiSave, Collect
+
+
+def addAnkiMessage(sub_sql, user_id):
+    '''
+    把收藏信息附加到 message
+    '''
+    # 取出这个用户的anki
+    anki_sq = session.query(AnkiSave).filter(
+        AnkiSave.user_id == user_id).subquery()
+    # 附加 anki 到 message
+    return session.query(sub_sql, anki_sq.c.message_id.label('anki'),
+                         anki_sq.c.created_at.label('anki_at')).outerjoin(
+                             anki_sq,
+                             sub_sql.c.id == anki_sq.c.message_id).subquery()
 
 
 def addCollectMessage(sub_sql, user_id):
@@ -18,8 +32,7 @@ def addCollectMessage(sub_sql, user_id):
     sql = session.query(
         sub_sql, collect_sq.c.message_id.label('collect'),
         collect_sq.c.created_at.label('collect_at')).outerjoin(
-            collect_sq,
-            sub_sql.c.id == collect_sq.c.message_id).subquery()
+            collect_sq, sub_sql.c.id == collect_sq.c.message_id).subquery()
     return sql
 
 

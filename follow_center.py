@@ -19,7 +19,7 @@ import model
 import anki
 import proxy
 import filter
-from model import Collect, AnkiSave, God, FollowWho
+from model import God, FollowWho, Anki
 from model_bz import OauthInfo
 from sqlalchemy import and_, func
 import add
@@ -56,27 +56,16 @@ class api_collect(BaseHandler):
     def get(self):
         self.set_header("Content-Type", "application/json")
         session = db_bz.session_for_get
-        session.query(all_message)
+        user_id = self.current_user
 
-    #sql = '''
-    #select * from all_message m
-    #'''
-    #sql = add_bz.messagesCollect(sql, user_id)
-    #sql = add_bz.messagesAnkiSave(sql, user_id)
-    #sql = '''
-    #select * from (%s) s
-    #where collect is not null
-    #''' % sql
-    ## order by
-    #sql += ' order by collect_date desc '
+        sql = session.query(all_message).subquery()
+        sql = add.addCollectMessage(sql, user_id)
+        sql = add.addAnkiMessage(sql, user_id)
+        data = session.query(sql).filter(sql.c.collect.isnot(None)).order_by(
+            sql.c.collect_at).all()
+        data = [r._asdict() for r in data]
 
-        messages = public_db.getCollectMessages(user_id=self.current_user)
-        self.write(
-            json.dumps(
-                {
-                    'error': '0',
-                    'messages': messages
-                }, cls=json_bz.ExtEncoder))
+        self.write(json.dumps(data, cls=json_bz.ExtEncoder))
 
 
 class api_gods(BaseHandler):
@@ -102,7 +91,7 @@ class api_gods(BaseHandler):
             sql = sql.filter(God.created_at < before)
         if is_public:
             sql = sql.filter(God.is_public == 1)
-        ## 只看本人关注的
+        # 只看本人关注的
         elif user_id:
             my_god = session.query(
                 FollowWho.god_id).filter(FollowWho.user_id == user_id)
@@ -124,12 +113,12 @@ class api_cat(BaseHandler):
         is_my = self.get_argument('is_my', 0)
         user_id = self.current_user
         session = db_bz.session_for_get
-        ## 所有 social 都是空的废 god
+        # 所有 social 都是空的废 god
         null_god = session.query(God.id).filter(
             and_(
                 God.tumblr.is_(None), God.twitter.is_(None),
                 God.github.is_(None), God.instagram.is_(None)))
-        ## 空的不查
+        # 空的不查
         sql = session.query(God).filter(~God.id.in_(null_god))
         if is_my:
             my_god = session.query(
@@ -226,16 +215,8 @@ class api_new(BaseHandler):
         sql = session.query(all_message).subquery()
 
         if user_id:
-            # 取出未读的数量
-            query = add.addCollectMessage(sql, user_id)
-            # 取出这个用户的anki
-            anki_sq = session.query(AnkiSave).filter(
-                AnkiSave.user_id == user_id).subquery()
-            # 附加 anki 到 message
-            query = session.query(
-                query, anki_sq.c.message_id.label('anki'),
-                anki_sq.c.created_at.label('anki_at')).outerjoin(
-                    anki_sq, query.c.id == anki_sq.c.message_id).subquery()
+            sql = add.addCollectMessage(sql, user_id)
+            query = add.addAnkiMessage(sql, user_id)
         else:
             # 不要 18+ 的
             query = session.query(all_message).filter(
@@ -261,7 +242,7 @@ class api_new(BaseHandler):
             query = session.query(query).filter(
                 or_(query.c.text.ilike('%%%s%%' % search_key))).subquery()
         elif user_id:  # 没那几个, 又有 user_id, 只查关注了的
-            ## 查出还有多少未读
+            # 查出还有多少未读
             if after:
                 unread_query = filter.filterFollowedMessage(
                     all_message, user_id)
@@ -312,16 +293,22 @@ class api_login_anki(BaseHandler):
     @tornado_bz.handleErrorJson
     @tornado_bz.mustLoginJson
     def post(self):
+        '''
+        设置 anki 用户及密码
+        '''
         self.set_header("Content-Type", "application/json")
+        user_id = self.current_user
+        session = db_bz.getSession()
         data = json.loads(self.request.body)
-        anki_info = storage()
-        anki_info.user_name = data['user_name']
-        anki_info.password = data['password']
-        anki_info.user_id = self.current_user
-        db_bz.insertOrUpdate(pg, 'anki', anki_info,
-                             "user_id='%s'" % anki_info.user_id)
-        anki.getMidAndCsrfTokenHolder(anki_info.user_id, reset_cookie=True)
-        self.write(json.dumps(self.data))
+        anki_info = dict(
+            user_id=user_id,
+            user_name=data['user_name'],
+            password=data['password'],
+            csrf_token=None,
+            mid=None,
+            cookie=None)
+        db_bz.updateOrInsert(session, Anki, anki_info, user_id=user_id)
+        session.commit()
 
 
 class api_anki(BaseHandler):
@@ -336,7 +323,7 @@ class api_anki(BaseHandler):
         front = data['front']
         message_id = data['message_id']
         anki.addCard(front, self.current_user)
-        oper.anki_save(message_id, self.current_user)
+        #oper.anki_save(message_id, self.current_user)
         self.write(json.dumps(self.data))
 
     @tornado_bz.handleErrorJson
