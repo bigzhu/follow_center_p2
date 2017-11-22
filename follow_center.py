@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
-import json
 sys.path.append("../lib_py")
+import json
 import json_bz
 from sqlalchemy import or_
 
@@ -18,12 +18,40 @@ import time_bz
 import model
 import anki
 import proxy
-import filter
+import filter_oper
 from model import God, FollowWho, Anki
 from model_bz import OauthInfo
 from sqlalchemy import and_, func
 import add
+import message
 all_message = db_bz.getReflect('all_message')
+
+
+class api_last(tornado_bz.BaseHandler):
+
+    @tornado_bz.handleErrorJson
+    def put(self):
+        '''
+        记录看到这一条的时间, 并返回未读数
+        '''
+        self.set_header("Content-Type", "application/json")
+        data = json.loads(self.request.body)
+        print(data)
+        last = data.get('last')
+        last = time_bz.unicodeToDateTIme(last)
+
+        user_id = self.current_user
+        if user_id is None:
+            self.finish()
+            return
+        last_info = dict(update_at=last)
+        session = db_bz.getSession()
+        db_bz.updateOrInsert(session, model.Last, last_info, user_id=user_id)
+
+        unread_message_count = message.getUnreadCount(user_id, last)
+
+        session.commit()
+        self.write(str(unread_message_count))
 
 
 class api_collect(BaseHandler):
@@ -204,7 +232,7 @@ class api_new(BaseHandler):
 
         unread_message_count = 0
         if after:
-            after = time_bz.timestampToDateTime(after, True)
+            after = time_bz.unicodeToDateTIme(after)
         elif search_key is None and god_name is None:  # 按 search 和 god 查时, 不必取 last
             after = session.query(model.Last.updated_at).filter(
                 model.Last.user_id == user_id).all()
@@ -244,13 +272,9 @@ class api_new(BaseHandler):
         elif user_id:  # 没那几个, 又有 user_id, 只查关注了的
             # 查出还有多少未读
             if after:
-                unread_query = filter.filterFollowedMessage(
-                    all_message, user_id)
-                unread_query = session.query(unread_query).filter(
-                    unread_query.c.out_created_at > after).subquery()
-                unread_message_count = session.query(unread_query).count()
+                unread_message_count = message.getUnreadCount(user_id, after)
 
-            query = filter.filterFollowedMessage(query, user_id)
+            query = filter_oper.filterFollowedMessage(query, user_id)
 
         # query = session.query(query).order_by(query.c.out_created_at).limit(limit)
         query = session.query(query).order_by(
