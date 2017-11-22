@@ -52,10 +52,12 @@ class api_cat(BaseHandler):
                 sql = sql.filter(God.cat != '18+')
         sub_sql = sql.subquery()
 
-        cats = session.query(func.count(sub_sql.c.cat),
+        data = session.query(func.count(sub_sql.c.cat).label('count'),
                              sub_sql.c.cat).group_by(sub_sql.c.cat).all()
 
-        self.write(json.dumps(cats, cls=json_bz.ExtEncoder))
+        data = [r._asdict() for r in data]
+
+        self.write(json.dumps(data, cls=json_bz.ExtEncoder))
 
 
 class api_login(BaseHandler):
