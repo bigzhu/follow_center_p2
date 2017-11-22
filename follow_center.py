@@ -21,7 +21,41 @@ import proxy
 import filter
 from model import Collect, AnkiSave, God, FollowWho
 from model_bz import OauthInfo
+from sqlalchemy import and_, func
 all_message = db_bz.getReflect('all_message')
+
+
+class api_cat(BaseHandler):
+    @tornado_bz.handleErrorJson
+    def get(self):
+        """
+        查出 god 分类
+        """
+        self.set_header("Content-Type", "application/json")
+        is_my = self.get_argument('is_my', 0)
+        user_id = self.current_user
+        session = db_bz.getSession()
+        ## 所有 social 都是空的废 god
+        null_god = session.query(God.id).filter(
+            and_(
+                God.tumblr.is_(None), God.twitter.is_(None),
+                God.github.is_(None), God.instagram.is_(None)))
+        ## 空的不查
+        sql = session.query(God).filter(~God.id.in_(null_god))
+        if is_my:
+            my_god = session.query(
+                FollowWho.god_id).filter(FollowWho.user_id == user_id)
+            sql = sql.filter(God.id.in_(my_god))
+        else:
+            sql = sql.filter(God.is_public == 1)
+            if user_id is None:
+                sql = sql.filter(God.cat != '18+')
+        sub_sql = sql.subquery()
+
+        cats = session.query(func.count(sub_sql.c.cat),
+                             sub_sql.c.cat).group_by(sub_sql.c.cat).all()
+
+        self.write(json.dumps(cats, cls=json_bz.ExtEncoder))
 
 
 class api_login(BaseHandler):
@@ -33,7 +67,8 @@ class api_login(BaseHandler):
         # password = login_info.get("password")
         session = db_bz.getSession()
         user_info = session.query(OauthInfo).filter(
-            OauthInfo.name == user_name, OauthInfo.type == 'github').one_or_none()
+            OauthInfo.name == user_name,
+            OauthInfo.type == 'github').one_or_none()
         if user_info is None:
             raise Exception('没有用户 %s' % user_name)
         self.set_secure_cookie("user_id", str(user_info.id))
@@ -59,20 +94,19 @@ class api_registered(BaseHandler):
 
 class api_new(BaseHandler):
     """
-    create by bigzhu at 15/08/17 11:12:24 查看我订阅了的message，要定位到上一次看的那条
-    modify by bigzhu at 15/11/17 16:22:05 最多查1000出来
-    modify by bigzhu at 15/11/17 19:18:25 不要在这里限制条目数
-    modify by bigzhu at 16/02/21 10:02:25 改为get
-    modify by bigzhu at 16/04/29 14:54:37 支持关键字查找
-    modify by bigzhu at 16/05/28 23:10:05 重构
+        create by bigzhu at 15/08/17 11:12:24 查看我订阅了的message，要定位到上一次看的那条
+        modify by bigzhu at 15/11/17 16:22:05 最多查1000出来
+        modify by bigzhu at 15/11/17 19:18:25 不要在这里限制条目数
+        modify by bigzhu at 16/02/21 10:02:25 改为get
+        modify by bigzhu at 16/04/29 14:54:37 支持关键字查找
+        modify by bigzhu at 16/05/28 23:10:05 重构
 
-    @apiGroup message
-    @api {get} /api_new 取新的社交信息
-    @apiParam {String} after 只查在这个时间以后的
-    @apiParam {Number} limit 数量限制
-    @apiParam {String} search_key 搜索关键字
-    @apiParam {String} god_name 只看这个人的
-
+        @apiGroup message
+        @api {get} /api_new 取新的社交信息
+        @apiParam {String} after 只查在这个时间以后的
+        @apiParam {Number} limit 数量限制
+        @apiParam {String} search_key 搜索关键字
+        @apiParam {String} god_name 只看这个人的
     """
 
     def get(self, parm=None):
@@ -153,7 +187,8 @@ class api_new(BaseHandler):
             query = filter.filterFollowedMessage(query, session, user_id)
 
         # query = session.query(query).order_by(query.c.out_created_at).limit(limit)
-        query = session.query(query).order_by(query.c.out_created_at).limit(limit)
+        query = session.query(query).order_by(
+            query.c.out_created_at).limit(limit)
         #print(query.statement.compile(compile_kwargs={"literal_binds": True}))
         messages = query.all()
         messages = [r._asdict() for r in messages]
