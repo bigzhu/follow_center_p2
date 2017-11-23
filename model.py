@@ -8,6 +8,21 @@ from sqlalchemy.dialects.postgresql import JSONB
 import model_bz
 
 
+class Remark(model_bz.Base):
+    '''
+    create by bigzhu at 16/06/06 10:37:47 给god添加备注
+    >>> Remark.__table__.create(checkfirst=True)
+    '''
+    __tablename__ = 'remark'
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    user_id = Column(Text, nullable=False)
+
+    god_id = Column(Integer, nullable=False, index=True)  # 实际上是你要follow的用户的id
+    remark = Column(Text, nullable=False)
+
+
 class FollowWho(model_bz.Base):
     '''
     create by bigzhu at 15/07/14 14:54:27 你要follow谁
@@ -77,7 +92,8 @@ class Message(model_bz.Base):
 
     out_id = Column(Text, nullable=False)  # 外部的id, 避免重复同步 以前叫 id_str
     m_type = Column(Text, nullable=False)  # twitter or instagram or github
-    out_created_at = Column(DateTime, index=True)  # 在对应社交帐号真实的生成时间 以前的 created_at
+    # 在对应社交帐号真实的生成时间 以前的 created_at
+    out_created_at = Column(DateTime, index=True)
     content = Column(JSONB)  # 带结构的内容
     text = Column(Text)  # 文本内容
     title = Column(Text)  # tumblr text blog 的 title

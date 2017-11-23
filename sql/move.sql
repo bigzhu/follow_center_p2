@@ -39,3 +39,7 @@ INSERT INTO public.follow_who(
 SELECT id, created_date, stat_date, user_id, god_id
 	FROM public_save.follow_who;
 
+INSERT INTO public.remark(
+	id, created_at, updated_at, user_id, god_id, remark)
+SELECT id, created_date, stat_date, user_id, god_id, remark
+	FROM public_save.remark;

@@ -119,22 +119,28 @@ class api_gods(BaseHandler):
         user_id = self.current_user
         session = db_bz.session_for_get
 
-        sql = session.query(God)
+        q = session.query(God)
         if cat:
-            sql = sql.filter(God.cat == cat)
+            q = q.filter(God.cat == cat)
         if before:
-            sql = sql.filter(God.created_at < before)
+            q = q.filter(God.created_at < before)
         if not followed:
-            sql = sql.filter(God.is_public == 1)
+            q = q.filter(God.is_public == 1)
         # 只看本人关注的
         elif user_id:
             my_god = session.query(
                 FollowWho.god_id).filter(FollowWho.user_id == user_id)
-            sql = sql.filter(God.id.in_(my_god))
+            q = q.filter(God.id.in_(my_god))
         else:
             raise Exception('未登录, 无法看私人关注!')
-        data = sql.order_by(desc(God.created_at)).limit(limit).all()
-        # data = [r._asdict() for r in data]
+
+        # 空god过滤
+        sub_sql = god.filterAllNullGod(q.subquery())
+        sub_sql = god.addGodFollowedCount(sub_sql)
+        sub_sql = god.addAdminRemark(sub_sql)
+        data = session.query(sub_sql).order_by(desc(sub_sql.c.created_at)).limit(limit).all()
+
+        data = [r._asdict() for r in data]
         self.write(json.dumps(data, cls=json_bz.ExtEncoder))
 
 
@@ -160,6 +166,7 @@ class api_cat(BaseHandler):
                 q = q.filter(God.cat != '18+')
 
         sub_sql = god.filterAllNullGod(q.subquery())
+        sub_sql = god.addGodFollowedCount(sub_sql)
 
         data = session.query(
             func.count(sub_sql.c.cat).label('count'), sub_sql.c.cat).group_by(

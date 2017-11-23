@@ -4,8 +4,40 @@ import sys
 sys.path.append("../lib_py")
 
 from db_bz import session_for_get as session
-from sqlalchemy import and_
-from model import God
+from sqlalchemy import and_, func, tuple_
+from model import God, FollowWho, Remark
+
+
+def addAdminRemark(sub_sql):
+    '''
+    添加 remark 信息, 以最小的 user_id 的 remark 做其 admin remark
+    >>> sub_sql = session.query(God).subquery()
+    >>> addAdminRemark(sub_sql)
+    <sqlalchemy.sql.selectable.Alias at...
+    '''
+    min_user_god = session.query(
+        func.min(Remark.user_id), Remark.god_id).group_by(Remark.god_id).subquery()
+    one_god_remark = session.query(Remark.remark, Remark.god_id).filter(
+        tuple_(Remark.user_id, Remark.god_id).in_(min_user_god)).subquery()
+
+    return session.query(sub_sql, one_god_remark.c.remark).outerjoin(
+        one_god_remark,
+        sub_sql.c.id == one_god_remark.c.god_id).subquery()
+
+
+def addGodFollowedCount(sub_sql):
+    '''
+    添加每个god有多少人关注
+    >>> sub_sql = session.query(God).subquery()
+    >>> addGodFollowedCount(sub_sql)
+    <sqlalchemy.sql.selectable.Alias at...
+    '''
+    god_count = session.query(
+        func.count(FollowWho.id).label('count'), FollowWho.god_id).group_by(FollowWho.god_id).subquery()
+
+    return session.query(sub_sql, god_count.c.count).outerjoin(
+        god_count,
+        sub_sql.c.id == god_count.c.god_id).subquery()
 
 
 def filterAllNullGod(sub_sql):
@@ -21,8 +53,5 @@ def filterAllNullGod(sub_sql):
 
 
 if __name__ == '__main__':
-    #sql = session.query(God).subquery()
-    #sql = filterAllNullGod(sql)
-    #print(session.query(sql).count())
     import doctest
     doctest.testmod(verbose=False, optionflags=doctest.ELLIPSIS)
