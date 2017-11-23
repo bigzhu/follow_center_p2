@@ -8,8 +8,57 @@ sys.path.append("../lib_py")
 import db_bz
 from db_bz import session_for_get as session
 import filter_oper
+from model import AnkiSave, Collect, God, FollowWho
 
 all_message = db_bz.getReflect('all_message')
+
+
+def filterFollowed(query, user_id):
+    '''
+    查出这个用户关注的, 返回 subquery
+    >>> import db_bz
+    >>> all_message = db_bz.getReflect('all_message')
+    >>> session = db_bz.getSession()
+    >>> query = filterFollowedMessage(all_message, session, '1')
+    >>> session.query(query).count()
+    '''
+    query = session.query(query).filter(
+        query.c.god_name.in_(
+            session.query(God.name).filter(
+                God.id.in_(
+                    session.query(FollowWho.god_id).filter(
+                        FollowWho.user_id == user_id))))).subquery()
+
+    return query
+
+
+def addCollectInfo(sub_sql, user_id):
+    '''
+    把收藏信息附加到 message
+    '''
+    # 取出这个用户的收藏
+    collect_sq = session.query(Collect).filter(
+        Collect.user_id == user_id).subquery()
+    # 附加收藏到 message 里
+    sql = session.query(
+        sub_sql, collect_sq.c.message_id.label('collect'),
+        collect_sq.c.created_at.label('collect_at')).outerjoin(
+            collect_sq, sub_sql.c.id == collect_sq.c.message_id).subquery()
+    return sql
+
+
+def addAnkiInfo(sub_sql, user_id):
+    '''
+    把收藏信息附加到 message
+    '''
+    # 取出这个用户的anki
+    anki_sq = session.query(AnkiSave).filter(
+        AnkiSave.user_id == user_id).subquery()
+    # 附加 anki 到 message
+    return session.query(sub_sql, anki_sq.c.message_id.label('anki'),
+                         anki_sq.c.created_at.label('anki_at')).outerjoin(
+                             anki_sq,
+                             sub_sql.c.id == anki_sq.c.message_id).subquery()
 
 
 def getUnreadCount(user_id, after):

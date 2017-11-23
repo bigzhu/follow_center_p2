@@ -18,11 +18,9 @@ import time_bz
 import model
 import anki
 import proxy
-import filter_oper
 from model import God, FollowWho, Anki
 from model_bz import OauthInfo
 from sqlalchemy import and_, func
-import add
 import message
 all_message = db_bz.getReflect('all_message')
 
@@ -87,8 +85,8 @@ class api_collect(BaseHandler):
         user_id = self.current_user
 
         sql = session.query(all_message).subquery()
-        sql = add.addCollectMessage(sql, user_id)
-        sql = add.addAnkiMessage(sql, user_id)
+        sql = message.addCollectInfo(sql, user_id)
+        sql = message.addAnkiInfo(sql, user_id)
         data = session.query(sql).filter(sql.c.collect.isnot(None)).order_by(
             sql.c.collect_at).all()
         data = [r._asdict() for r in data]
@@ -243,8 +241,8 @@ class api_new(BaseHandler):
         sql = session.query(all_message).subquery()
 
         if user_id:
-            sql = add.addCollectMessage(sql, user_id)
-            query = add.addAnkiMessage(sql, user_id)
+            sql = message.addCollectInfo(sql, user_id)
+            query = message.addAnkiInfo(sql, user_id)
         else:
             # 不要 18+ 的
             query = session.query(all_message).filter(
@@ -274,7 +272,7 @@ class api_new(BaseHandler):
             if after:
                 unread_message_count = message.getUnreadCount(user_id, after)
 
-            query = filter_oper.filterFollowedMessage(query, user_id)
+            query = message.filterFollowed(query, user_id)
 
         # query = session.query(query).order_by(query.c.out_created_at).limit(limit)
         query = session.query(query).order_by(
