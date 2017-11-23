@@ -38,9 +38,9 @@ def getTwitterUser(twitter_name, god_name):
     try:
         twitter_user = api.get_user(screen_name=twitter_name)
     except tweepy.error.TweepError:
-        print 'twitter_name=', twitter_name
+        print('twitter_name=', twitter_name)
         error_info = public_bz.getExpInfo()
-        print error_info
+        print(error_info)
 
         if 'User not found.' in error_info:
             god_oper.delNoName('twitter', god_name)
@@ -96,9 +96,9 @@ def main(god, wait):
             saveMessage(god_name, twitter_name, god_id, tweet)
         # oper.noMessageTooLong('twitter', user.twitter)
     except tweepy.error.TweepError:
-        print 'twitter_name=', twitter_name
+        print('twitter_name=', twitter_name)
         error_info = public_bz.getExpInfo()
-        print error_info
+        print(error_info)
 
         if 'User not found.' in error_info:
             god_oper.delNoName('twitter', god_name)
@@ -142,7 +142,7 @@ def saveMessage(god_name, twitter_name, god_id, tweet):
     m.href = 'https://twitter.com/' + m.name + '/status/' + m.id_str
     id = pg.insertIfNotExist('message', m, "id_str='%s' and m_type='twitter'" % tweet.id_str)
     if id is not None:
-        print '%s new twitter %s' % (m.name, m.id_str)
+        print('%s new twitter %s' % (m.name, m.id_str))
     return id
 
 
@@ -167,10 +167,10 @@ def waitReset(god_name, twitter_name, god_id):
             remaining = getRemaining()
         except tweepy.error.TweepError:
             error_info = public_bz.getExpInfo()
-            print error_info
+            print(error_info)
             time.sleep(1200)
             continue
-        print 'remaining:', remaining
+        print('remaining:', remaining)
         if remaining == 0:
             time.sleep(1200)
         else:
@@ -194,5 +194,5 @@ if __name__ == '__main__':
 
     while True:
         loop(wait=True)
-        print datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         time.sleep(2400)
