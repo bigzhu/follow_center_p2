@@ -36,13 +36,14 @@ class api_last(tornado_bz.BaseHandler):
         self.set_header("Content-Type", "application/json")
         data = json.loads(self.request.body)
         last = data.get('last')
+        print(last)
         last = time_bz.unicodeToDateTIme(last)
 
         user_id = self.current_user
         if user_id is None:
             self.finish()
             return
-        last_info = dict(update_at=last)
+        last_info = dict(updated_at=last)
         session = db_bz.getSession()
         db_bz.updateOrInsert(session, model.Last, last_info, user_id=user_id)
 
@@ -244,17 +245,13 @@ class api_new(BaseHandler):
         god_name = self.get_argument('god_name', None)
 
         user_id = self.current_user
-
         unread_message_count = 0
         if after:
             after = time_bz.unicodeToDateTIme(after)
         elif search_key is None and god_name is None:  # 按 search 和 god 查时, 不必取 last
             after = session.query(model.Last.updated_at).filter(
-                model.Last.user_id == user_id).all()
-            if after:
-                after = after[0]
-            else:
-                after = None
+                model.Last.user_id == user_id).one_or_none()
+            print(after)
         sql = session.query(all_message).subquery()
 
         if user_id:
