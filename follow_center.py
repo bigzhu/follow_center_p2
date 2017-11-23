@@ -396,7 +396,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         port = int(sys.argv[1])
     else:
-        port = 9444
+        port = 9445
     print(port)
 
     web_class = tornado_bz.getAllWebBzRequestHandlers()
