@@ -8,6 +8,19 @@ from sqlalchemy import and_, func, tuple_
 from model import God, FollowWho, Remark
 
 
+def addUserFollowedInfo(sub_sql, user_id):
+    '''
+    某用户是否关注
+    >>> sub_sql = session.query(God).subquery()
+    >>> addUserFollowedInfo(sub_sql, '4')
+    <sqlalchemy.sql.selectable.Alias at...
+    '''
+    followed_info = session.query(FollowWho.god_id.label('followed_god_id'), FollowWho.updated_at.label('followed_at'), FollowWho.id.label('followed')).filter(FollowWho.user_id == user_id).subquery()
+
+    return session.query(sub_sql, followed_info.c.followed, followed_info.c.followed_at).outerjoin(
+        followed_info,
+        sub_sql.c.id == followed_info.c.followed_god_id).subquery()
+
 def addAdminRemark(sub_sql):
     '''
     添加 remark 信息, 以最小的 user_id 的 remark 做其 admin remark

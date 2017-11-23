@@ -136,8 +136,13 @@ class api_gods(BaseHandler):
 
         # 空god过滤
         sub_sql = god.filterAllNullGod(q.subquery())
+        # 关注数
         sub_sql = god.addGodFollowedCount(sub_sql)
+        # 取 admin remark
         sub_sql = god.addAdminRemark(sub_sql)
+        if user_id:
+            sub_sql = god.addUserFollowedInfo(sub_sql, user_id)
+            
         data = session.query(sub_sql).order_by(desc(sub_sql.c.created_at)).limit(limit).all()
 
         data = [r._asdict() for r in data]
