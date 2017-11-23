@@ -9,7 +9,8 @@ modify by bigzhu at 15/11/28 11:36:18 可以查某个用户
 import sys
 sys.path.append("../../lib_py")
 sys.path.append("../")
-
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.sql.expression import cast
 from model import God, Message
 import db_bz
 import god
@@ -189,8 +190,9 @@ def loop(god_name=None, wait=None, test=False):
     >>> loop('bigzhu', None, True)
     [<model.God object at ...>]
     '''
+
     q = session.query(God).filter(God.twitter.isnot(None)
-                                  ).filter(God.twitter.name != '')
+                                  ).filter(God.twitter['name'] != cast("", JSONB))
     if god_name:
         q = q.filter(God.name == god_name)
     if test:
