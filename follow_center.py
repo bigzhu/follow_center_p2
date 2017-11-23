@@ -22,6 +22,7 @@ from model import God, FollowWho, Anki
 from model_bz import OauthInfo
 from sqlalchemy import and_, func, desc
 import message
+import god
 all_message = db_bz.getReflect('all_message')
 
 
@@ -124,20 +125,15 @@ class api_gods(BaseHandler):
         if before:
             sql = sql.filter(God.created_at < before)
         if not followed:
-            print('public')
             sql = sql.filter(God.is_public == 1)
         # 只看本人关注的
         elif user_id:
-            print('just my')
-            print(before)
             my_god = session.query(
                 FollowWho.god_id).filter(FollowWho.user_id == user_id)
             sql = sql.filter(God.id.in_(my_god))
         else:
             raise Exception('未登录, 无法看私人关注!')
         data = sql.order_by(desc(God.created_at)).limit(limit).all()
-        for i in data:
-            print(i.created_at)
         # data = [r._asdict() for r in data]
         self.write(json.dumps(data, cls=json_bz.ExtEncoder))
 
@@ -152,22 +148,18 @@ class api_cat(BaseHandler):
         is_my = self.get_argument('is_my', 0)
         user_id = self.current_user
         session = db_bz.session_for_get
-        # 所有 social 都是空的废 god
-        null_god = session.query(God.id).filter(
-            and_(
-                God.tumblr.is_(None), God.twitter.is_(None),
-                God.github.is_(None), God.instagram.is_(None)))
-        # 空的不查
-        sql = session.query(God).filter(~God.id.in_(null_god))
+
+        q = session.query(God)
         if is_my:
             my_god = session.query(
                 FollowWho.god_id).filter(FollowWho.user_id == user_id)
-            sql = sql.filter(God.id.in_(my_god))
+            q = q.filter(God.id.in_(my_god))
         else:
-            sql = sql.filter(God.is_public == 1)
+            q = q.filter(God.is_public == 1)
             if user_id is None:
-                sql = sql.filter(God.cat != '18+')
-        sub_sql = sql.subquery()
+                q = q.filter(God.cat != '18+')
+
+        sub_sql = god.filterAllNullGod(q.subquery())
 
         data = session.query(
             func.count(sub_sql.c.cat).label('count'), sub_sql.c.cat).group_by(
