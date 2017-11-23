@@ -34,7 +34,6 @@ class api_last(tornado_bz.BaseHandler):
         '''
         self.set_header("Content-Type", "application/json")
         data = json.loads(self.request.body)
-        print(data)
         last = data.get('last')
         last = time_bz.unicodeToDateTIme(last)
 
@@ -49,6 +48,7 @@ class api_last(tornado_bz.BaseHandler):
         unread_message_count = message.getUnreadCount(user_id, last)
 
         session.commit()
+        session.close()
         self.write(str(unread_message_count))
 
 
@@ -331,6 +331,7 @@ class api_login_anki(BaseHandler):
             cookie=None)
         db_bz.updateOrInsert(session, Anki, anki_info, user_id=user_id)
         session.commit()
+        session.colse()
 
 
 class api_anki(BaseHandler):
