@@ -16,6 +16,7 @@ tornado = "*"
 requests = "*"
 "bs4" = "*"
 sqlalchemy = "*"
+tweepy = "*"
 
 
 [pipenv]

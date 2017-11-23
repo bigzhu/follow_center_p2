@@ -8,20 +8,21 @@ modify by bigzhu at 15/11/28 11:36:18 可以查某个用户
 '''
 import sys
 sys.path.append("../../lib_py")
+sys.path.append("../")
 
+from model import God, Message
+import db_bz
+import god
 import datetime
 import sys
 import time
-import god_oper
 from datetime import timedelta
 import tweepy
-from db_bz import pg
 import json
-import public_bz
-import social_sync
-import ConfigParser
-config = ConfigParser.ConfigParser()
-with open('../conf/twitter.ini', 'r') as cfg_file:
+import exception_bz
+import configparser
+config = configparser.ConfigParser()
+with open('./conf/twitter.ini', 'r') as cfg_file:
     config.readfp(cfg_file)
     consumer_key = config.get('secret', 'consumer_key')
     consumer_secret = config.get('secret', 'consumer_secret')
@@ -31,49 +32,55 @@ auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 
 api = tweepy.API(auth)
+session = db_bz.getSession()
 
 
-def getTwitterUser(twitter_name, god_name):
-    twitter_user = None
+def needDel(error_info):
+    '''
+    出现这些报错, 说明没有 twitter 账户
+    '''
+    error_list = [
+        'User not found.',
+        'User has been suspended.'
+        'Not authorized.',
+        'Sorry, that page does not exist.'
+    ]
+    for i in error_list:
+        if i in error_info:
+            return True
+
+
+def syncUserInfo(god_info):
+    '''
+    同步户信息
+    >>> god_info = session.query(God).filter(God.name=='bigzhu').one()
+    >>> syncUserInfo(god_info)
+    True
+    '''
+    twitter_name = god_info.twitter['name']
     try:
         twitter_user = api.get_user(screen_name=twitter_name)
+        # 不要用返回的name, 大小写会发生变化
+        twitter = dict(
+            name=twitter_name,
+            type='twitter',
+            count=twitter_user.followers_count,
+            avatar=twitter_user.profile_image_url_https.replace(
+                '_normal', '_400x400'),
+            description=twitter_user.description
+        )
+        god_info.twitter = twitter
+        return True
     except tweepy.error.TweepError:
         print('twitter_name=', twitter_name)
-        error_info = public_bz.getExpInfo()
+        error_info = exception_bz.getExpInfo()
         print(error_info)
-
-        if 'User not found.' in error_info:
-            god_oper.delNoName('twitter', god_name)
-        if 'User has been suspended.' in error_info:  # 帐号被冻结了
-            god_oper.delNoName('twitter', god_name)
-        if 'Not authorized.' in error_info:  # 私有
-            god_oper.delNoName('twitter', god_name)
-        if 'Sorry, that page does not exist.' in error_info:  # 没用户
-            god_oper.delNoName('twitter', god_name)
-    if twitter_user:
-        twitter_user = saveUser(god_name, twitter_name, twitter_user)
-    else:
-        god_oper.delNoName('twitter', god_name)
-    return twitter_user
+        if needDel(error_info):
+            god_info.twitter = {'name': ''}
+            print('del %s twitter: %s' % (god_info.name, twitter_name))
 
 
-def saveUser(god_name, twitter_name, twitter_user):
-    social_user = public_bz.storage()
-    # 不要用返回的name, 大小写会发生变化
-    # social_user.name = twitter_user.screen_name
-    social_user.name = twitter_name
-    social_user.type = 'twitter'
-    social_user.count = twitter_user.followers_count
-    social_user.avatar = twitter_user.profile_image_url_https.replace('_normal', '_400x400')
-    social_user.description = twitter_user.description
-    # 没有找到
-    # social_user.sync_key = twitter_user.description
-
-    pg.update('god', where={'name': god_name}, twitter=json.dumps(social_user))
-    return social_user
-
-
-def main(god, wait):
+def sync(god_info, wait):
     '''
     create by bigzhu at 15/07/04 22:49:04
         用 https://api.twitter.com/1.1/statuses/user_timeline.json 可以取到某个用户的信息
@@ -82,38 +89,34 @@ def main(god, wait):
         考虑使用 http://www.tweepy.org/ 来调用twitter api
     modify by bigzhu at 15/08/02 21:35:46 避免批量微信通知
     create by bigzhu at 16/04/30 09:56:02 不再取转发的消息
+    >>> god_info = session.query(God).filter(God.name=='bigzhu').one()
+    >>> sync(god_info, None)
     '''
-    god_name = god.name
-    twitter_name = god.twitter['name']
-    god_id = god.id
+    god_name = god_info.name
+    twitter_name = god_info.twitter['name']
+    god_id = god_info.id
     try:
-        twitter_user = getTwitterUser(twitter_name, god_name)
-        if not twitter_user:
+        if syncUserInfo(god_info) is None:
             return
-        public_tweets = api.user_timeline(screen_name=twitter_name, include_rts=False, exclude_replies=True)
+        public_tweets = api.user_timeline(
+            screen_name=twitter_name, include_rts=False, exclude_replies=True)
         for tweet in public_tweets:
             tweet.created_at += timedelta(hours=8)
             saveMessage(god_name, twitter_name, god_id, tweet)
         # oper.noMessageTooLong('twitter', user.twitter)
     except tweepy.error.TweepError:
         print('twitter_name=', twitter_name)
-        error_info = public_bz.getExpInfo()
+        error_info = exception_bz.getExpInfo()
         print(error_info)
+        if needDel(error_info):
+            god_info.twitter = {'name': ''}
 
-        if 'User not found.' in error_info:
-            god_oper.delNoName('twitter', god_name)
         if 'Rate limit exceeded' in error_info:  # 调用太多
             if wait:
                 waitReset(god_name, twitter_name, god_id)
             else:
                 raise Exception('Twitter api 的调用次数用完了，请等个10分钟再添加!')
             return 'Rate limit exceeded'
-        if 'User has been suspended.' in error_info:  # 帐号被冻结了
-            god_oper.delNoName('twitter', god_name)
-        if 'Not authorized.' in error_info:  # 私有
-            god_oper.delNoName('twitter', god_name)
-        if 'Sorry, that page does not exist.' in error_info:  # 没用户
-            god_oper.delNoName('twitter', god_name)
 
 
 def saveMessage(god_name, twitter_name, god_id, tweet):
@@ -126,23 +129,25 @@ def saveMessage(god_name, twitter_name, god_id, tweet):
         tweet 消息本身
     modify by bigzhu at 17/01/13 15:38:11 去了用不到的
     '''
-    m = public_bz.storage()
-    m.god_id = god_id
-    m.god_name = god_name
-    m.name = twitter_name
-
-    m.id_str = tweet.id_str
-    m.m_type = 'twitter'
-    m.created_at = tweet.created_at
-    m.content = None
-    m.text = tweet.text
+    m = dict(
+        god_id=god_id,
+        god_name=god_name,
+        name=twitter_name,
+        out_id=tweet.id_str,
+        m_type='twitter',
+        created_at=tweet.created_at,
+        content=None,
+        text=tweet.text
+    )
     if hasattr(tweet, 'extended_entities'):
-        m.extended_entities = json.dumps(tweet.extended_entities)
-        m.type = tweet.extended_entities['media'][0]['type']
-    m.href = 'https://twitter.com/' + m.name + '/status/' + m.id_str
-    id = pg.insertIfNotExist('message', m, "id_str='%s' and m_type='twitter'" % tweet.id_str)
-    if id is not None:
-        print('%s new twitter %s' % (m.name, m.id_str))
+        m['extended_entities'] = tweet.extended_entities
+        m['type'] = tweet.extended_entities['media'][0]['type']
+    m['href'] = 'https://twitter.com/' + \
+        twitter_name + '/status/' + tweet.id_str
+    i, insert = db_bz.updateOrInsert(
+        session, Message, m, out_id=tweet.id_str, m_type='twitter')
+    if insert:
+        print('%s new twitter %s' % (m['name'], m['out_id']))
     return id
 
 
@@ -166,7 +171,7 @@ def waitReset(god_name, twitter_name, god_id):
         try:
             remaining = getRemaining()
         except tweepy.error.TweepError:
-            error_info = public_bz.getExpInfo()
+            error_info = exception_bz.getExpInfo()
             print(error_info)
             time.sleep(1200)
             continue
@@ -178,15 +183,25 @@ def waitReset(god_name, twitter_name, god_id):
             break
 
 
-def loop(god_name=None, wait=None):
+def loop(god_name=None, wait=None, test=False):
     '''
     create by bigzhu at 16/05/30 13:26:38 取出所有的gods，同步
+    >>> loop('bigzhu', None, True)
+    [<model.God object at ...>]
     '''
-    gods = social_sync.getSocialGods('twitter', god_name)
-    for god in gods:
-        main(god, wait)
+    q = session.query(God).filter(God.twitter.isnot(None)
+                                  ).filter(God.twitter.name != '')
+    if god_name:
+        q = q.filter(God.name == god_name)
+    if test:
+        return q.all()
 
-if __name__ == '__main__':
+    for god_info in q.all():
+        sync(god_info, wait)
+        session.commit()
+
+
+def main():
     if len(sys.argv) == 2:
         god_name = (sys.argv[1])
         loop(god_name)
@@ -196,3 +211,9 @@ if __name__ == '__main__':
         loop(wait=True)
         print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         time.sleep(2400)
+
+
+if __name__ == '__main__':
+    main()
+    #import doctest
+    #doctest.testmod(verbose=False, optionflags=doctest.ELLIPSIS)

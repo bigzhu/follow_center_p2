@@ -15,11 +15,13 @@ def addUserFollowedInfo(sub_sql, user_id):
     >>> addUserFollowedInfo(sub_sql, '4')
     <sqlalchemy.sql.selectable.Alias at...
     '''
-    followed_info = session.query(FollowWho.god_id.label('followed_god_id'), FollowWho.updated_at.label('followed_at'), FollowWho.id.label('followed')).filter(FollowWho.user_id == user_id).subquery()
+    followed_info = session.query(FollowWho.god_id.label('followed_god_id'), FollowWho.updated_at.label(
+        'followed_at'), FollowWho.id.label('followed')).filter(FollowWho.user_id == user_id).subquery()
 
     return session.query(sub_sql, followed_info.c.followed, followed_info.c.followed_at).outerjoin(
         followed_info,
         sub_sql.c.id == followed_info.c.followed_god_id).subquery()
+
 
 def addAdminRemark(sub_sql):
     '''

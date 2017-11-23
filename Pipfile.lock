@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ff0a5c274e711ed8fdc09cf358a2e66ba9998ac62a8354ac663ed0e9116c8a2e"
+            "sha256": "1940c84164ddbd172ad1475f0661dd2bed1e4989b62b1278f6e40a31adae3363"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -62,6 +62,12 @@
             ],
             "version": "==2.6"
         },
+        "oauthlib": {
+            "hashes": [
+                "sha256:ce57b501e906ff4f614e71c36a3ab9eacbb96d35c24d1970d2539bbc3ec70ce1"
+            ],
+            "version": "==2.0.6"
+        },
         "psycopg2": {
             "hashes": [
                 "sha256:594aa9a095de16614f703d759e10c018bdffeafce2921b8e80a0e8a0ebbc12e5",
@@ -105,6 +111,20 @@
             ],
             "version": "==2.18.4"
         },
+        "requests-oauthlib": {
+            "hashes": [
+                "sha256:50a8ae2ce8273e384895972b56193c7409601a66d4975774c60c2aed869639ca",
+                "sha256:883ac416757eada6d3d07054ec7092ac21c7f35cb1d2cf82faf205637081f468"
+            ],
+            "version": "==0.8.0"
+        },
+        "six": {
+            "hashes": [
+                "sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb",
+                "sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9"
+            ],
+            "version": "==1.11.0"
+        },
         "sqlalchemy": {
             "hashes": [
                 "sha256:c041c590af00c800858489a81ca6565a143aa968502fec61b240ab4f887cad0a"
@@ -120,6 +140,13 @@
                 "sha256:1fb8e494cd46c674d86fac5885a3ff87b0e283937a47d74eb3c02a48c9e89ad0"
             ],
             "version": "==4.5.2"
+        },
+        "tweepy": {
+            "hashes": [
+                "sha256:12449b5ca16b0be6a3ea68fb41992627227b48bbad8cd7d5912039340d36badc",
+                "sha256:f00ccf5f48c30d559ce0b750dfe3b2df6668dc799d8ce276fd90bfaa68845a58"
+            ],
+            "version": "==3.5.0"
         },
         "urllib3": {
             "hashes": [
