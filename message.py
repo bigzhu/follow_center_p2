@@ -7,7 +7,6 @@ import sys
 sys.path.append("../lib_py")
 import db_bz
 from db_bz import session_for_get as session
-import filter_oper
 from model import AnkiSave, Collect, God, FollowWho
 
 all_message = db_bz.getReflect('all_message')
@@ -70,7 +69,7 @@ def getUnreadCount(user_id, after):
     0
     '''
 
-    unread_query = filter_oper.filterFollowedMessage(
+    unread_query = filterFollowed(
         all_message, user_id)
     unread_query = session.query(unread_query).filter(
         unread_query.c.out_created_at > after).subquery()

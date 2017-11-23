@@ -20,7 +20,7 @@ import anki
 import proxy
 from model import God, FollowWho, Anki
 from model_bz import OauthInfo
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, desc
 import message
 all_message = db_bz.getReflect('all_message')
 
@@ -101,12 +101,20 @@ class api_gods(BaseHandler):
 
     @tornado_bz.handleErrorJson
     def get(self):
+        """
+        @apiGroup god
+        @api {get} /api_gods 推荐关注的人
+        @apiParam {String} cat 分类
+        @apiParam {String} before 早于这个时间的(取更多)
+        @apiParam {Number} limit 一次取几个
+        @apiParam {Boolean} followed 已关注, 否则为推荐
+        """
 
         self.set_header("Content-Type", "application/json")
         cat = self.get_argument('cat', None)
         before = self.get_argument('before', None)
         limit = self.get_argument('limit', 6)
-        is_public = self.get_argument('is_public', None)
+        followed = self.get_argument('followed', False)
         user_id = self.current_user
         session = db_bz.session_for_get
 
@@ -115,16 +123,21 @@ class api_gods(BaseHandler):
             sql = sql.filter(God.cat == cat)
         if before:
             sql = sql.filter(God.created_at < before)
-        if is_public:
+        if not followed:
+            print('public')
             sql = sql.filter(God.is_public == 1)
         # 只看本人关注的
         elif user_id:
+            print('just my')
+            print(before)
             my_god = session.query(
                 FollowWho.god_id).filter(FollowWho.user_id == user_id)
             sql = sql.filter(God.id.in_(my_god))
         else:
             raise Exception('未登录, 无法看私人关注!')
-        data = sql.limit(limit).all()
+        data = sql.order_by(desc(God.created_at)).limit(limit).all()
+        for i in data:
+            print(i.created_at)
         # data = [r._asdict() for r in data]
         self.write(json.dumps(data, cls=json_bz.ExtEncoder))
 
