@@ -9,7 +9,7 @@ import db_bz
 from model import AnkiSave, Collect, God, FollowWho
 
 all_message = db_bz.getReflect('all_message')
-session = db_bz.getSession()
+session = db_bz.session
 
 
 def filterFollowed(sub_sql, user_id):

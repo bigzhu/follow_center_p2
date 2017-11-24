@@ -10,7 +10,7 @@ import db_bz
 import tornado.ioloop
 import tornado.web
 import tornado_bz
-from tornado_bz import BaseHandler, DBHandler, Application
+from tornado_bz import BaseHandler
 
 import tornado_web_bz
 import time_bz
@@ -25,6 +25,7 @@ import datetime
 import message
 import god
 all_message = db_bz.getReflect('all_message')
+from db_bz import session
 
 
 class api_last(tornado_bz.BaseHandler):
@@ -83,7 +84,6 @@ class api_collect(BaseHandler):
     @tornado_bz.mustLoginJson
     def get(self):
         self.set_header("Content-Type", "application/json")
-        session = db_bz.session_for_get
         user_id = self.current_user
 
         sql = session.query(all_message).subquery()
@@ -118,7 +118,6 @@ class api_gods(BaseHandler):
         limit = self.get_argument('limit', 6)
         followed = self.get_argument('followed', False)
         user_id = self.current_user
-        session = db_bz.session_for_get
 
         q = session.query(God)
         if cat:
@@ -160,7 +159,6 @@ class api_cat(BaseHandler):
         self.set_header("Content-Type", "application/json")
         is_my = self.get_argument('is_my', 0)
         user_id = self.current_user
-        session = db_bz.session_for_get
 
         q = session.query(God)
         if is_my:
@@ -191,7 +189,6 @@ class api_login(BaseHandler):
         login_info = json.loads(self.request.body)
         user_name = login_info.get("user_name")
         # password = login_info.get("password")
-        session = db_bz.session_for_get
         user_info = session.query(OauthInfo).filter(
             OauthInfo.name == user_name,
             OauthInfo.type == 'github').one_or_none()
@@ -209,7 +206,6 @@ class api_registered(BaseHandler):
     @tornado_bz.handleErrorJson
     def get(self):
         self.set_header("Content-Type", "application/json")
-        session = db_bz.session_for_get
         registered_count = session.query(OauthInfo).count()
         self.write(
             json.dumps(
@@ -218,7 +214,7 @@ class api_registered(BaseHandler):
                 }, cls=json_bz.ExtEncoder))
 
 
-class api_new(DBHandler):
+class api_new(BaseHandler):
     """
         create by bigzhu at 15/08/17 11:12:24 查看我订阅了的message，要定位到上一次看的那条
         modify by bigzhu at 15/11/17 16:22:05 最多查1000出来
@@ -236,9 +232,6 @@ class api_new(DBHandler):
     """
 
     def get(self, parm=None):
-        session = self.session
-        print(session)
-
         self.set_header("Content-Type", "application/json")
 
         after = self.get_argument('after', None)  # 晚于这个时间的
@@ -427,7 +420,7 @@ if __name__ == "__main__":
         settings["disable_sp"] = None
     settings["login_url"] = "/app/login.html"
     # settings, wechat = wechat_oper.initSetting(settings)
-    application = Application(url_map, **settings)
+    application = tornado.web.Application(url_map, **settings)
 
     application.listen(port)
     ioloop = tornado.ioloop.IOLoop().instance()

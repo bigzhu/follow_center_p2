@@ -6,7 +6,7 @@ sys.path.append("../lib_py")
 import db_bz
 from sqlalchemy import and_, func, tuple_
 from model import God, FollowWho, Remark
-session = db_bz.getSession()
+session = db_bz.session
 
 
 def addUserFollowedInfo(sub_sql, user_id):
