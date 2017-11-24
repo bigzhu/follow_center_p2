@@ -4,26 +4,25 @@ import sys
 sys.path.append("../lib_py")
 
 from flask import Flask
-from flask import make_response
+from flask import request
+# from flask import make_response
 from flask import jsonify
-from db_bz import session
-import db_bz
-import model
-import json
-import json_bz
 from flask_bz import ExtEncoder
-
-all_message = db_bz.getReflect('all_message')
+import message
 
 
 app = Flask(__name__)
 app.json_encoder = ExtEncoder
 
 
-@app.route('/')
+@app.route('/api_new')
 def api_new():
-    data = session.query(model.Message).limit(20).all()
-    # data = [r._asdict() for r in data]
+
+    after = request.args.get('after', None)  # 晚于这个时间的
+    limit = request.args.get('limit', 10)
+    search_key = request.args.get('search_key', None)
+    god_name = request.args.get('god_name', None)
+    data = message.getNew(None, after, limit, search_key, god_name)
     return jsonify(data)
 
 
