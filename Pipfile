@@ -17,6 +17,7 @@ requests = "*"
 "bs4" = "*"
 sqlalchemy = "*"
 tweepy = "*"
+flask = "*"
 
 
 [pipenv]
