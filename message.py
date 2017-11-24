@@ -6,10 +6,10 @@ message 表的一些操作
 import sys
 sys.path.append("../lib_py")
 import db_bz
-from db_bz import session_for_get as session
 from model import AnkiSave, Collect, God, FollowWho
 
 all_message = db_bz.getReflect('all_message')
+session = db_bz.getSession()
 
 
 def filterFollowed(sub_sql, user_id):
@@ -17,9 +17,10 @@ def filterFollowed(sub_sql, user_id):
     查出这个用户关注的, 返回 subquery
     >>> import db_bz
     >>> all_message = db_bz.getReflect('all_message')
-    >>> session = db_bz.getSession()
-    >>> query = filterFollowedMessage(all_message, session, '1')
+    >>> sub_sql = session.query(all_message).subquery()
+    >>> query = filterFollowed(all_message, '1')
     >>> session.query(sub_sql).count()
+    1...
     '''
     query = session.query(sub_sql).filter(
         sub_sql.c.god_name.in_(

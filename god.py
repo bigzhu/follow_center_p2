@@ -3,9 +3,10 @@
 import sys
 sys.path.append("../lib_py")
 
-from db_bz import session_for_get as session
+import db_bz
 from sqlalchemy import and_, func, tuple_
 from model import God, FollowWho, Remark
+session = db_bz.getSession()
 
 
 def addUserFollowedInfo(sub_sql, user_id):

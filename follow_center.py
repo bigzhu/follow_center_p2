@@ -10,7 +10,7 @@ import db_bz
 import tornado.ioloop
 import tornado.web
 import tornado_bz
-from tornado_bz import BaseHandler
+from tornado_bz import BaseHandler, DBHandler, Application
 
 import tornado_web_bz
 import time_bz
@@ -21,6 +21,7 @@ import proxy
 from model import God, FollowWho, Anki
 from model_bz import OauthInfo
 from sqlalchemy import and_, func, desc
+import datetime
 import message
 import god
 all_message = db_bz.getReflect('all_message')
@@ -36,7 +37,6 @@ class api_last(tornado_bz.BaseHandler):
         self.set_header("Content-Type", "application/json")
         data = json.loads(self.request.body)
         last = data.get('last')
-        print(last)
         last = time_bz.unicodeToDateTIme(last)
 
         user_id = self.current_user
@@ -143,8 +143,9 @@ class api_gods(BaseHandler):
         sub_sql = god.addAdminRemark(sub_sql)
         if user_id:
             sub_sql = god.addUserFollowedInfo(sub_sql, user_id)
-            
-        data = session.query(sub_sql).order_by(desc(sub_sql.c.created_at)).limit(limit).all()
+
+        data = session.query(sub_sql).order_by(
+            desc(sub_sql.c.created_at)).limit(limit).all()
 
         data = [r._asdict() for r in data]
         self.write(json.dumps(data, cls=json_bz.ExtEncoder))
@@ -217,7 +218,7 @@ class api_registered(BaseHandler):
                 }, cls=json_bz.ExtEncoder))
 
 
-class api_new(BaseHandler):
+class api_new(DBHandler):
     """
         create by bigzhu at 15/08/17 11:12:24 查看我订阅了的message，要定位到上一次看的那条
         modify by bigzhu at 15/11/17 16:22:05 最多查1000出来
@@ -235,7 +236,8 @@ class api_new(BaseHandler):
     """
 
     def get(self, parm=None):
-        session = db_bz.session_for_get
+        session = self.session
+        print(session)
 
         self.set_header("Content-Type", "application/json")
 
@@ -246,53 +248,55 @@ class api_new(BaseHandler):
 
         user_id = self.current_user
         unread_message_count = 0
+
         if after:
             after = time_bz.unicodeToDateTIme(after)
-        elif search_key is None and god_name is None:  # 按 search 和 god 查时, 不必取 last
+        elif search_key is None and god_name is None:  # 不按 search 和 god 查时, 登录了取 last
             after = session.query(model.Last.updated_at).filter(
                 model.Last.user_id == user_id).one_or_none()
-            print(after)
-        sql = session.query(all_message).subquery()
+            if after is None:  # 未登录或者没有last, 取最近两天
+                after = datetime.date.today() - datetime.timedelta(days=6)
+
+        sub_sql = session.query(all_message).subquery()
 
         if user_id:
-            sql = message.addCollectInfo(sql, user_id)
-            query = message.addAnkiInfo(sql, user_id)
+            sub_sql = message.addCollectInfo(sub_sql, user_id)
+            sub_sql = message.addAnkiInfo(sub_sql, user_id)
         else:
             # 不要 18+ 的
-            query = session.query(all_message).filter(
+            sub_sql = session.query(all_message).filter(
                 all_message.c.cat != '18+').subquery()
             # 只要 public 的
-            query = session.query(query).filter(
-                query.c.god_name.in_(
+            sub_sql = session.query(sub_sql).filter(
+                sub_sql.c.god_name.in_(
                     session.query(God.name).filter(God.is_public.in_(
                         [1, 2])))).subquery()
 
         # after = None
         # 查比这个时间新的
         if after:
-            query = session.query(query).filter(
-                query.c.out_created_at > after).subquery()
+            sub_sql = session.query(sub_sql).filter(
+                sub_sql.c.out_created_at > after).subquery()
 
         # 互斥的filter_bz.filter
         if god_name:
-            query = session.query(query).filter(query.c.god_name == god_name)
+            sub_sql = session.query(sub_sql).filter(
+                sub_sql.c.god_name == god_name)
         elif search_key:
             # jsonb 没找到办法做like
             #query = session.query(query).filter(or_(query.c.text.ilike('%%%s%%' % search_key), query.c.content.astext.like('%%%s%%' % search_key))).subquery()
-            query = session.query(query).filter(
-                or_(query.c.text.ilike('%%%s%%' % search_key))).subquery()
+            sub_sql = session.query(sub_sql).filter(
+                or_(sub_sql.c.text.ilike('%%%s%%' % search_key))).subquery()
         elif user_id:  # 没那几个, 又有 user_id, 只查关注了的
             # 查出还有多少未读
             if after:
                 unread_message_count = message.getUnreadCount(user_id, after)
 
-            query = message.filterFollowed(query, user_id)
+            sub_sql = message.filterFollowed(sub_sql, user_id)
 
-        # query = session.query(query).order_by(query.c.out_created_at).limit(limit)
-        query = session.query(query).order_by(
-            query.c.out_created_at).limit(limit)
-        #print(query.statement.compile(compile_kwargs={"literal_binds": True}))
-        messages = query.all()
+        sub_sql = session.query(sub_sql).order_by(
+            sub_sql.c.out_created_at).limit(limit)
+        messages = sub_sql.all()
         messages = [r._asdict() for r in messages]
         data = dict(
             messages=messages, unread_message_count=unread_message_count)
@@ -423,7 +427,7 @@ if __name__ == "__main__":
         settings["disable_sp"] = None
     settings["login_url"] = "/app/login.html"
     # settings, wechat = wechat_oper.initSetting(settings)
-    application = tornado.web.Application(url_map, **settings)
+    application = Application(url_map, **settings)
 
     application.listen(port)
     ioloop = tornado.ioloop.IOLoop().instance()
