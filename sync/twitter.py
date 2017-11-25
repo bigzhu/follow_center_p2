@@ -13,13 +13,11 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql.expression import cast
 from model import God, Message
 import db_bz
-import god
 import datetime
 import sys
 import time
 from datetime import timedelta
 import tweepy
-import json
 import exception_bz
 import configparser
 config = configparser.ConfigParser()

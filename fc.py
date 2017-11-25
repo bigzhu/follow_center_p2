@@ -14,7 +14,7 @@ import oauth_bz
 import conf
 import last_oper
 import cat_oper
-import god as god_oper
+import god_oper
 
 
 app = Flask(__name__)

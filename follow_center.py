@@ -23,7 +23,7 @@ from model_bz import OauthInfo
 from sqlalchemy import and_, func, desc
 import datetime
 import message_oper
-import god
+import god_oper
 all_message = db_bz.getReflect('all_message')
 from db_bz import session
 
@@ -135,13 +135,13 @@ class api_gods(BaseHandler):
             raise Exception('未登录, 无法看私人关注!')
 
         # 空god过滤
-        sub_sql = god.filterAllNullGod(q.subquery())
+        sub_sql = god_oper.filterAllNullGod(q.subquery())
         # 关注数
-        sub_sql = god.addGodFollowedCount(sub_sql)
+        sub_sql = god_oper.addGodFollowedCount(sub_sql)
         # 取 admin remark
-        sub_sql = god.addAdminRemark(sub_sql)
+        sub_sql = god_oper.addAdminRemark(sub_sql)
         if user_id:
-            sub_sql = god.addUserFollowedInfo(sub_sql, user_id)
+            sub_sql = god_oper.addUserFollowedInfo(sub_sql, user_id)
 
         data = session.query(sub_sql).order_by(
             desc(sub_sql.c.created_at)).limit(limit).all()
@@ -170,8 +170,8 @@ class api_cat(BaseHandler):
             if user_id is None:
                 q = q.filter(God.cat != '18+')
 
-        sub_sql = god.filterAllNullGod(q.subquery())
-        sub_sql = god.addGodFollowedCount(sub_sql)
+        sub_sql = god_oper.filterAllNullGod(q.subquery())
+        sub_sql = god_oper.addGodFollowedCount(sub_sql)
 
         data = session.query(
             func.count(sub_sql.c.cat).label('count'), sub_sql.c.cat).group_by(
