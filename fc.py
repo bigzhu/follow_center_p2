@@ -22,6 +22,16 @@ app.json_encoder = ExtEncoder
 app.secret_key = conf.cookie_secret
 
 
+@app.route('/api_god')
+def api_god():
+    god_name = request.args.get('god_name', None)
+    user_id = cookie.get('user_id')
+    data = god_oper.getGod(god_name, user_id)
+    if data is None:
+        raise Exception('不存在 %s' % god_name)
+    return jsonify(data)
+
+
 @app.route('/api_gods')
 def api_gods():
     """

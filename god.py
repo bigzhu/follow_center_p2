@@ -10,6 +10,24 @@ from model import God, FollowWho, Remark
 session = db_bz.session
 
 
+def addUserRemark(sub_sql, user_id):
+    user_remark = session.query(Remark.remark, Remark.god_id).filter(
+        Remark.user_id == user_id).subquery()
+
+    return session.query(sub_sql, user_remark.c.remark).outerjoin(
+        user_remark,
+        sub_sql.c.id == user_remark.c.god_id).subquery()
+
+
+def getGod(god_name, user_id):
+    sub_sql = session.query(God).filter(God.name == god_name).subquery()
+    sub_sql = addAdminRemark(sub_sql)
+    sub_sql = addUserRemark(sub_sql, user_id)
+    data = session.query(sub_sql).one_or_none()
+    if data is not None:
+        return data._asdict()
+
+
 def getGods(user_id, cat, before, limit, followed):
     q = session.query(God)
     if cat:
@@ -69,7 +87,7 @@ def addAdminRemark(sub_sql):
     one_god_remark = session.query(Remark.remark, Remark.god_id).filter(
         tuple_(Remark.user_id, Remark.god_id).in_(min_user_god)).subquery()
 
-    return session.query(sub_sql, one_god_remark.c.remark).outerjoin(
+    return session.query(sub_sql, one_god_remark.c.remark.label('admin_remark')).outerjoin(
         one_god_remark,
         sub_sql.c.id == one_god_remark.c.god_id).subquery()
 
