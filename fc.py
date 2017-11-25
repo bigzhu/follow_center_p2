@@ -14,11 +14,33 @@ import oauth_bz
 import conf
 import last_oper
 import cat_oper
+import god as god_oper
 
 
 app = Flask(__name__)
 app.json_encoder = ExtEncoder
 app.secret_key = conf.cookie_secret
+
+
+@app.route('/api_gods')
+def api_gods():
+    """
+    @apiGroup god
+    @api {get} /api_gods 推荐关注的人
+    @apiParam {String} cat 分类
+    @apiParam {String} before 早于这个时间的(取更多)
+    @apiParam {Number} limit 一次取几个
+    @apiParam {Boolean} followed 已关注, 否则为推荐
+    """
+    cat = request.args.get('cat', None)
+    before = request.args.get('before', None)
+    limit = request.args.get('limit', 6)
+    followed = request.args.get('followed', False)
+    user_id = cookie.get('user_id')
+
+    data = god_oper.getGods(user_id, cat, before, limit, followed)
+
+    return jsonify(data)
 
 
 @app.route('/api_cat')

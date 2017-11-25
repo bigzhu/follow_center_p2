@@ -5,8 +5,41 @@ sys.path.append("../lib_py")
 
 import db_bz
 from sqlalchemy import and_, func, tuple_
+from sqlalchemy import desc
 from model import God, FollowWho, Remark
 session = db_bz.session
+
+
+def getGods(user_id, cat, before, limit, followed):
+    q = session.query(God)
+    if cat:
+        q = q.filter(God.cat == cat)
+    if before:
+        q = q.filter(God.created_at < before)
+    if not followed:
+        q = q.filter(God.is_public == 1)
+    # 只看本人关注的
+    elif user_id:
+        my_god = session.query(
+            FollowWho.god_id).filter(FollowWho.user_id == user_id)
+        q = q.filter(God.id.in_(my_god))
+    else:
+        raise Exception('未登录, 无法看私人关注!')
+
+    # 空god过滤
+    sub_sql = filterAllNullGod(q.subquery())
+    # 关注数
+    sub_sql = addGodFollowedCount(sub_sql)
+    # 取 admin remark
+    sub_sql = addAdminRemark(sub_sql)
+    if user_id:
+        sub_sql = addUserFollowedInfo(sub_sql, user_id)
+
+    data = session.query(sub_sql).order_by(
+        desc(sub_sql.c.created_at)).limit(limit).all()
+
+    data = [r._asdict() for r in data]
+    return data
 
 
 def addUserFollowedInfo(sub_sql, user_id):
