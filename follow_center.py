@@ -22,7 +22,7 @@ from model import God, FollowWho, Anki
 from model_bz import OauthInfo
 from sqlalchemy import and_, func, desc
 import datetime
-import message
+import message_oper
 import god
 all_message = db_bz.getReflect('all_message')
 from db_bz import session
@@ -48,7 +48,7 @@ class api_last(tornado_bz.BaseHandler):
         session = db_bz.getSession()
         db_bz.updateOrInsert(model.Last, last_info, user_id=user_id)
 
-        unread_message_count = message.getUnreadCount(user_id, last)
+        unread_message_count = message_oper.getUnreadCount(user_id, last)
 
         session.commit()
         session.close()
@@ -87,8 +87,8 @@ class api_collect(BaseHandler):
         user_id = self.current_user
 
         sql = session.query(all_message).subquery()
-        sql = message.addCollectInfo(sql, user_id)
-        sql = message.addAnkiInfo(sql, user_id)
+        sql = message_oper.addCollectInfo(sql, user_id)
+        sql = message_oper.addAnkiInfo(sql, user_id)
         data = session.query(sql).filter(sql.c.collect.isnot(None)).order_by(
             sql.c.collect_at).all()
         data = [r._asdict() for r in data]
@@ -253,8 +253,8 @@ class api_new(BaseHandler):
         sub_sql = session.query(all_message).subquery()
 
         if user_id:
-            sub_sql = message.addCollectInfo(sub_sql, user_id)
-            sub_sql = message.addAnkiInfo(sub_sql, user_id)
+            sub_sql = message_oper.addCollectInfo(sub_sql, user_id)
+            sub_sql = message_oper.addAnkiInfo(sub_sql, user_id)
         else:
             # 不要 18+ 的
             sub_sql = session.query(all_message).filter(
@@ -283,9 +283,9 @@ class api_new(BaseHandler):
         elif user_id:  # 没那几个, 又有 user_id, 只查关注了的
             # 查出还有多少未读
             if after:
-                unread_message_count = message.getUnreadCount(user_id, after)
+                unread_message_count = message_oper.getUnreadCount(user_id, after)
 
-            sub_sql = message.filterFollowed(sub_sql, user_id)
+            sub_sql = message_oper.filterFollowed(sub_sql, user_id)
 
         sub_sql = session.query(sub_sql).order_by(
             sub_sql.c.out_created_at).limit(limit)

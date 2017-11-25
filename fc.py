@@ -9,7 +9,7 @@ from flask import request
 from flask import jsonify
 from flask_bz import ExtEncoder
 from flask import session as cookie
-import message
+import message_oper
 import oauth_bz
 import conf
 import last_oper
@@ -73,7 +73,7 @@ def api_last():
     last = request.get_json().get('last')
     last_oper.saveLast(user_id, last)
 
-    unread_message_count = message.getUnreadCount(user_id, last)
+    unread_message_count = message_oper.getUnreadCount(user_id, last)
     return jsonify(unread_message_count)
 
 
@@ -102,7 +102,7 @@ def api_new():
     limit = request.args.get('limit', 10)
     search_key = request.args.get('search_key', None)
     god_name = request.args.get('god_name', None)
-    data = message.getNew(cookie.get('user_id'), after,
+    data = message_oper.getNew(cookie.get('user_id'), after,
                           limit, search_key, god_name)
     return jsonify(data)
 
