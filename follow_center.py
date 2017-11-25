@@ -46,7 +46,7 @@ class api_last(tornado_bz.BaseHandler):
             return
         last_info = dict(updated_at=last)
         session = db_bz.getSession()
-        db_bz.updateOrInsert(session, model.Last, last_info, user_id=user_id)
+        db_bz.updateOrInsert(model.Last, last_info, user_id=user_id)
 
         unread_message_count = message.getUnreadCount(user_id, last)
 
@@ -340,7 +340,7 @@ class api_login_anki(BaseHandler):
             csrf_token=None,
             mid=None,
             cookie=None)
-        db_bz.updateOrInsert(session, Anki, anki_info, user_id=user_id)
+        db_bz.updateOrInsert(Anki, anki_info, user_id=user_id)
         session.commit()
         session.colse()
 

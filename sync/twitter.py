@@ -33,7 +33,7 @@ auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 
 api = tweepy.API(auth)
-session = db_bz.getSession()
+session = db_bz.session
 
 
 def needDel(error_info):
@@ -146,7 +146,7 @@ def saveMessage(god_name, twitter_name, god_id, tweet):
     m['href'] = 'https://twitter.com/' + \
         twitter_name + '/status/' + tweet.id_str
     i, insert = db_bz.updateOrInsert(
-        session, Message, m, out_id=tweet.id_str, m_type='twitter')
+        Message, m, out_id=tweet.id_str, m_type='twitter')
     if insert:
         print('%s new twitter %s' % (m['name'], m['out_id']))
     return id
