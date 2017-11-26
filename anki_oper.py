@@ -15,6 +15,18 @@ DECK = 'Default'
 URL = 'https://ankiweb.net/account/login'
 client = None
 cookies = None
+from model import AnkiSave
+from db_bz import session
+
+
+def saveAnki(message_id, user_id):
+    '''
+    记录哪些 message 已提到 anki 了
+    '''
+    anki_save = locals()
+
+    db_bz.getOrInsert(AnkiSave, anki_save,
+                      message_id=message_id, user_id=user_id)
 
 
 def getAnkiConfig(user_id):
@@ -23,7 +35,6 @@ def getAnkiConfig(user_id):
     >>> getAnkiConfig('1')
     <model.Anki object at...
     '''
-    session = db_bz.getSession()
     datas = session.query(model.Anki).filter_by(user_id=user_id).all()
     if(len(datas) == 0):
         raise Exception('你还没有配置Anki信息')
@@ -64,7 +75,6 @@ def getMidAndCsrfTokenHolder(user_id, reset_cookie=False):
     if data.mid is not None and not reset_cookie:
         return data.mid, data.csrf_token, data.cookie
     mid, csrf_token, cookie = getMidAndCsrfToken(data.user_name, data.password)
-    session = db_bz.getSession()
     anki_info = session.query(model.Anki).filter(
         model.Anki.user_id == user_id).first()
     anki_info.mid = mid
@@ -117,7 +127,8 @@ def addCard(front, user_id, not_try=None):
     save_info = {'data': data, 'mid': str(
         mid), 'deck': DECK, 'csrf_token': str(csrf_token)}
     # r = requests.post('https://ankiuser.net/edit/save',
-    r = requests.post('https://ankiuser.net/edit/save', cookies=cookies, data=save_info)
+    r = requests.post('https://ankiuser.net/edit/save',
+                      cookies=cookies, data=save_info)
     if r.text != '1':
         if '403 Forbidden' in r.text and not_try is None:
             getMidAndCsrfTokenHolder(user_id, True)

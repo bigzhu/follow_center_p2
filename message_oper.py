@@ -60,7 +60,7 @@ def getOld(user_id, before, limit, search_key, god_name):
     return messages
 
 
-def getNew(user_id, after, limit, search_key, god_name):
+def getNew(user_id, after, limit, search_key, god_name, not_types):
     unread_message_count = 0
 
     if after:
@@ -73,6 +73,8 @@ def getNew(user_id, after, limit, search_key, god_name):
             after = datetime.date.today() - datetime.timedelta(days=6)
 
     sub_sql = session.query(all_message).subquery()
+    if not_types:
+        sub_sql = session.query(sub_sql).filter(~sub_sql.c.m_type.in_(not_types)).subquery()
 
     if user_id:
         sub_sql = addCollectInfo(sub_sql, user_id)

@@ -357,7 +357,7 @@ class api_anki(BaseHandler):
         front = data['front']
         message_id = data['message_id']
         anki.addCard(front, self.current_user)
-        #oper.anki_save(message_id, self.current_user)
+        oper.anki_save(message_id, self.current_user)
         self.write(json.dumps(self.data))
 
     @tornado_bz.handleErrorJson

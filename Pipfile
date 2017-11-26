@@ -19,6 +19,7 @@ sqlalchemy = "*"
 tweepy = "*"
 flask = "*"
 python-dateutil = "*"
+flask-oauth = "*"
 
 
 [pipenv]
