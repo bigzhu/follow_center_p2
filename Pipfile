@@ -18,6 +18,7 @@ requests = "*"
 sqlalchemy = "*"
 tweepy = "*"
 flask = "*"
+python-dateutil = "*"
 
 
 [pipenv]

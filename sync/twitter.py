@@ -100,6 +100,7 @@ def sync(god_info, wait):
         public_tweets = api.user_timeline(
             screen_name=twitter_name, include_rts=False, exclude_replies=True)
         for tweet in public_tweets:
+            print(tweet.created_at.tzname())
             tweet.created_at += timedelta(hours=8)
             saveMessage(god_name, twitter_name, god_id, tweet)
         # oper.noMessageTooLong('twitter', user.twitter)

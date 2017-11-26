@@ -3,7 +3,7 @@
 import sys
 sys.path.append("../lib_py")
 import datetime
-from sqlalchemy import Column, ForeignKey, Integer, Text, DateTime
+from sqlalchemy import Column, Integer, Text, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 import model_bz
 
@@ -48,7 +48,7 @@ class AnkiSave(model_bz.Base):
     updated_at = Column(DateTime, default=datetime.datetime.utcnow)
     user_id = Column(Text, nullable=False)
 
-    message_id = Column(Integer, ForeignKey('message.id'), nullable=False)
+    message_id = Column(Integer, nullable=False)
 
 
 class God(model_bz.Base):
@@ -113,7 +113,7 @@ class Collect(model_bz.Base):
     updated_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user_id = Column(Text, nullable=False)
-    message_id = Column(Integer, ForeignKey('message.id'), nullable=False)
+    message_id = Column(Integer, nullable=False)
 
 
 class Last(model_bz.Base):

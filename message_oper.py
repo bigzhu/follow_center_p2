@@ -14,16 +14,59 @@ import datetime
 from model import God
 from model import FollowWho
 from sqlalchemy import or_
+from sqlalchemy import desc
 
 all_message = db_bz.getReflect('all_message')
+
+
+def getOld(user_id, before, limit, search_key, god_name):
+    sub_sql = session.query(all_message).subquery()
+    if user_id:
+        sub_sql = addCollectInfo(sub_sql, user_id)
+        sub_sql = addAnkiInfo(sub_sql, user_id)
+    else:  # 不给看18+
+        sub_sql = session.query(all_message).filter(
+            all_message.c.cat != '18+').subquery()
+        # 只要 public 的
+        sub_sql = session.query(sub_sql).filter(
+            sub_sql.c.god_name.in_(
+                session.query(God.name).filter(God.is_public.in_(
+                    [1, 2])))).subquery()
+
+    # 查这个时间前的
+    before = time_bz.jsonToDatetime(before)
+    last = session.query(model.Last).filter(model.Last.id == 1).one()
+    last.updated_at = before
+    print(last.updated_at)
+    session.commit()
+
+    sub_sql = session.query(sub_sql).filter(
+        sub_sql.c.out_created_at < before).subquery()
+
+    if god_name:
+        sub_sql = session.query(sub_sql).filter(
+            sub_sql.c.god_name == god_name).subquery()
+    elif search_key:
+        # jsonb 没找到办法做like
+        #query = session.query(query).filter(or_(query.c.text.ilike('%%%s%%' % search_key), query.c.content.astext.like('%%%s%%' % search_key))).subquery()
+        sub_sql = session.query(sub_sql).filter(
+            or_(sub_sql.c.text.ilike('%%%s%%' % search_key))).subquery()
+    elif user_id:
+        sub_sql = filterFollowed(sub_sql, user_id)
+
+    messages = session.query(sub_sql).order_by(
+        desc(sub_sql.c.out_created_at)).limit(limit).all()
+    messages = [r._asdict() for r in messages]
+    return messages
 
 
 def getNew(user_id, after, limit, search_key, god_name):
     unread_message_count = 0
 
     if after:
-        after = time_bz.unicodeToDateTIme(after)
-    elif search_key is None and god_name is None:  # 不按 search 和 god 查时, 登录了取 last
+        after = time_bz.jsonToDatetime(after)
+
+    if search_key is None and god_name is None:  # 不按 search 和 god 查时, 登录了取 last
         after = session.query(model.Last.updated_at).filter(
             model.Last.user_id == user_id).one_or_none()
         if after is None:  # 未登录或者没有last, 取最近两天
@@ -53,22 +96,20 @@ def getNew(user_id, after, limit, search_key, god_name):
     # 互斥的filter_bz.filter
     if god_name:
         sub_sql = session.query(sub_sql).filter(
-            sub_sql.c.god_name == god_name)
+            sub_sql.c.god_name == god_name).subquery()
     elif search_key:
         # jsonb 没找到办法做like
         #query = session.query(query).filter(or_(query.c.text.ilike('%%%s%%' % search_key), query.c.content.astext.like('%%%s%%' % search_key))).subquery()
         sub_sql = session.query(sub_sql).filter(
             or_(sub_sql.c.text.ilike('%%%s%%' % search_key))).subquery()
     elif user_id:  # 没那几个, 又有 user_id, 只查关注了的
-        # 查出还有多少未读
+        sub_sql = filterFollowed(sub_sql, user_id)
         if after:
+            # 查出还有多少未读
             unread_message_count = getUnreadCount(user_id, after)
 
-        sub_sql = filterFollowed(sub_sql, user_id)
-
-    sub_sql = session.query(sub_sql).order_by(
-        sub_sql.c.out_created_at).limit(limit)
-    messages = sub_sql.all()
+    messages = session.query(sub_sql).order_by(
+        sub_sql.c.out_created_at).limit(limit).all()
     messages = [r._asdict() for r in messages]
     data = dict(
         messages=messages, unread_message_count=unread_message_count)

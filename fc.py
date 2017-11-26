@@ -7,9 +7,11 @@ sys.path.append("../lib_py")
 from flask import Flask
 from flask import request
 from flask import jsonify
+# from flask import redirect
 from flask_bz import ExtEncoder
 from flask import session as cookie
 import message_oper
+import db_bz
 import oauth_bz
 import conf
 import last_oper
@@ -20,6 +22,37 @@ import god_oper
 app = Flask(__name__)
 app.json_encoder = ExtEncoder
 app.secret_key = conf.cookie_secret
+# js 需要访问 cookies
+app.config['SESSION_COOKIE_HTTPONLY'] = False
+
+
+@app.route('/api_logout')
+def api_logout():
+    cookie.pop('user_id')
+    return jsonify("0")
+    # return redirect('/', code=302)
+
+
+@app.route('/api_login', methods=['POST'])
+def api_login():
+
+    data = request.get_json()
+    user_name = data['user_name']
+    # password = data['password']
+    oauth_info = oauth_bz.getOauthInfo(None, user_name, 'github')
+    cookie['user_id'] = str(oauth_info.id)
+    return jsonify("0")
+
+
+@app.route('/api_old')
+def api_old():
+    before = request.args.get('before')
+    god_name = request.args.get('god_name')
+    search_key = request.args.get('search_key')
+    limit = request.args.get('limit', 10)
+    user_id = cookie.get('user_id')
+    data = message_oper.getOld(user_id, before, limit, search_key, god_name)
+    return jsonify(data)
 
 
 @app.route('/api_god')
@@ -91,6 +124,8 @@ def api_registered():
 def api_oauth_info():
 
     user_id = cookie.get('user_id')
+    if user_id is None:
+        return jsonify({'name': ''})
     data = oauth_bz.getOauthInfo(user_id)
     return jsonify(data)
 
@@ -103,15 +138,13 @@ def api_new():
     search_key = request.args.get('search_key', None)
     god_name = request.args.get('god_name', None)
     data = message_oper.getNew(cookie.get('user_id'), after,
-                          limit, search_key, god_name)
+                               limit, search_key, god_name)
     return jsonify(data)
 
 
-@app.route('/set')
-def set():
-
-    cookie['user_id'] = '4'
-    return jsonify("done")
+@app.teardown_request
+def shutdown_session(exception=None):
+    db_bz.session.remove()
 
 
 if __name__ == '__main__':

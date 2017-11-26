@@ -4,7 +4,7 @@
 from model import FollowWho
 from model import God
 from sqlalchemy import func
-import god
+import god_oper
 from db_bz import session
 
 
@@ -19,8 +19,8 @@ def getCat(user_id, followed=False):
         if user_id is None:
             q = q.filter(God.cat != '18+')
 
-    sub_sql = god.filterAllNullGod(q.subquery())
-    sub_sql = god.addGodFollowedCount(sub_sql)
+    sub_sql = god_oper.filterAllNullGod(q.subquery())
+    sub_sql = god_oper.addGodFollowedCount(sub_sql)
 
     data = session.query(
         func.count(sub_sql.c.cat).label('count'), sub_sql.c.cat).group_by(
