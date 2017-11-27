@@ -7,7 +7,7 @@ modify by bigzhu at 15/07/17 17:08:38 存进去还是不对,手工来来修正�
 modify by bigzhu at 15/11/28 11:36:18 可以查某个用户
 '''
 import sys
-sys.path.append("../lib_p_bz")
+sys.path.append("../lib_py")
 import god_oper
 import sys
 import datetime

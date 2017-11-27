@@ -32,6 +32,7 @@ auth.set_access_token(access_token, access_token_secret)
 
 api = tweepy.API(auth)
 session = db_bz.session
+from social_lib import loop
 
 
 def needDel(error_info):
@@ -183,33 +184,14 @@ def waitReset(god_name, twitter_name, god_id):
             break
 
 
-def loop(god_name=None, wait=None, test=False):
-    '''
-    create by bigzhu at 16/05/30 13:26:38 取出所有的gods，同步
-    >>> loop('bigzhu', None, True)
-    [<model.God object at ...>]
-    '''
-
-    q = session.query(God).filter(God.twitter.isnot(None)
-                                  ).filter(God.twitter['name'] != cast("", JSONB))
-    if god_name:
-        q = q.filter(God.name == god_name)
-    if test:
-        return q.all()
-
-    for god_info in q.all():
-        sync(god_info, wait)
-        session.commit()
-
-
 def main():
     if len(sys.argv) == 2:
         god_name = (sys.argv[1])
-        loop(god_name)
+        loop(sync, 'twitter', god_name)
         exit(0)
 
     while True:
-        loop(wait=True)
+        loop(sync, 'twitter', wait=True)
         print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         time.sleep(2400)
 
