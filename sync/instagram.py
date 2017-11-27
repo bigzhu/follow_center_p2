@@ -7,24 +7,25 @@ modify by bigzhu at 15/07/17 17:08:38 存进去还是不对,手工来来修正�
 modify by bigzhu at 15/11/28 11:36:18 可以查某个用户
 '''
 import sys
-sys.path.append("../lib_py")
-import god_oper
+sys.path.append("../../lib_py")
+sys.path.append("../")
+# import god_oper
 import sys
 import datetime
 import time_bz
 import requests
-import social_sync
 requests.adapters.DEFAULT_RETRIES = 5
 import time
-from public_bz import storage
-from db_bz import pg
 import json
-import public_bz
 from requests.exceptions import ConnectionError
 from bs4 import BeautifulSoup
 
 from socket import error as SocketError
 import errno
+from social_lib import loop
+from social_lib import getGods
+from model import Message
+import db_bz
 
 M_TYPE = 'instagram'
 
@@ -33,47 +34,47 @@ def saveGraphqlMessage(ins_name, user_name, god_id, message):
     '''
     用 Graphql 取到的数据
     '''
-    message = storage(message)
-
-    m = public_bz.storage()
-    m.god_name = user_name
-    m.name = ins_name
-    m.m_type = 'instagram'
-    m.id_str = message.id
-    m.created_at = time_bz.timestampToDateTime(message.taken_at_timestamp)
+    m = dict(
+        god_name=user_name,
+        name=ins_name,
+        m_type='instagram',
+        out_id=message['id'],
+        out_created_at=time_bz.timestampToDateTime(
+            message['taken_at_timestamp'])
+    )
 
     if message.get('edge_media_to_caption').get('edges'):
-        m.text = message.get('edge_media_to_caption').get('edges')[0].get('node').get('text')
+        m['text'] = message.get('edge_media_to_caption').get(
+            'edges')[0].get('node').get('text')
     else:
-        m.text = None
-    m.extended_entities = json.dumps({'url': message.display_url})
+        m['text'] = None
+    m['extended_entities'] = {'url': message['display_url']}
 
-    m.href = 'https://www.instagram.com/p/%s/' % message.shortcode
-    if message.__typename == 'GraphSidecar':  # mutiple image
-        edges = getMutipleImage(message.shortcode)
+    m['href'] = 'https://www.instagram.com/p/%s/' % message['shortcode']
+    if message['__typename'] == 'GraphSidecar':  # mutiple image
+        edges = getMutipleImage(message['shortcode'])
         images = []
         for edge in edges:
             url = edge['node']['display_url']
             images.append({'url': url})
-        m.extended_entities = json.dumps(images)
-        m.type = 'images'
-    elif message.is_video:
-        m.type = 'video'
-        video_url = getVideoUrl(m.href)
-        m.extended_entities = json.dumps({'url': message.display_url, 'video_url': video_url})
+        m['extended_entities'] = images
+        m['type'] = 'images'
+    elif message['is_video']:
+        m['type'] = 'video'
+        video_url = getVideoUrl(m['href'])
+        m['extended_entities'] = {
+            'url': message['display_url'], 'video_url': video_url}
     else:
-        m.type = 'image'
-    id = pg.insertIfNotExist('message', m, "id_str='%s' and m_type='instagram'" % m.id_str)
-    if id is not None:
-        print '%s new instagram message %s' % (m.name, m.id_str)
-    # 肯定会有一条重复
-    # else:
-    #    print '%s 重复记录 %s' % (m.user_name, m.id_str)
-    return id
+        m['type'] = 'image'
+
+    i, insert = db_bz.updateOrInsert(
+        Message, m, out_id=message['id'], m_type='instagram')
+    if insert:
+        print('%s new instagram %s' % (m['name'], m['out_id']))
 
 
 def getAllMedia(god_name):
-    god = social_sync.getSocialGods('instagram', god_name)[0]
+    god = getGods('instagram', god_name)[0]
     god_name = god.name
     god_id = god.id
     ins_name = god.instagram['name']
@@ -81,12 +82,13 @@ def getAllMedia(god_name):
     url = 'https://www.instagram.com/graphql/query/?query_id=17888483320059182&variables={"id":"%s","first":1000}' % ins_id
     r = requests.get(url)
     if r.status_code == 200:
-        nodes = r.json()['data']['user']['edge_owner_to_timeline_media']['edges']
+        nodes = r.json()[
+            'data']['user']['edge_owner_to_timeline_media']['edges']
         for node in nodes:
             node = node['node']
             saveGraphqlMessage(ins_name, god_name, god_id, node)
     else:
-        print r.status_code
+        print(r.status_code)
 
 
 class CodeException(Exception):
@@ -127,7 +129,7 @@ def getMutipleImage(code):
     return None
 
 
-def sync(god):
+def sync(god, wait):
     '''
     create by bigzhu at 16/06/12 16:19:09 api disabled
     '''
@@ -151,82 +153,78 @@ def sync(god):
                 content = content.replace('window._sharedData =', '')
                 content = content.replace(';', '')
                 content = json.loads(content)
-                user_info = content['entry_data']['ProfilePage'][0]['user']
+                user = content['entry_data']['ProfilePage'][0]['user']
 
-                saveUser(god_name, ins_name, user_info, etag)
-                if user_info['media'].get('nodes'):
-                    for message in user_info['media']['nodes']:
+                saveUser(god, user, etag)
+                if user['media'].get('nodes'):
+                    for message in user['media']['nodes']:
                         saveMessage(ins_name, god_name, god.id, message)
     elif r.status_code == 304:
         pass
     elif r.status_code == 404:
-        god_oper.delNoName(M_TYPE, god_name)
+        print(r.status_code)
+        # god_oper.delNoName(M_TYPE, god_name)
     else:
-        print r.status_code
+        print(r.status_code)
     # oper.noMessageTooLong(M_TYPE, user.instagram)
 
 
-def saveUser(god_name, ins_name, user, sync_key):
-    social_user = public_bz.storage()
-    social_user.type = 'instagram'
-    # social_user.name = user['username']
-    social_user.name = ins_name
-    social_user.count = user['followed_by']['count']
-    social_user.avatar = user['profile_pic_url']
-    social_user.description = user['biography']
-    social_user.id = user['id']
-    social_user.sync_key = sync_key
-    pg.update('god', where={'name': god_name}, instagram=json.dumps(social_user))
-    return social_user
+def saveUser(god, user, sync_key):
+
+    ins_name = god.instagram['name']
+    instagram = dict(
+        type='instagram',
+        name=ins_name,
+        count=user['followed_by']['count'],
+        avatar=user['profile_pic_url'],
+        description=user['biography'],
+        id=user['id'],
+        sync_key=sync_key
+    )
+    god.instagram = instagram
+    return True
 
 
 def saveMessage(ins_name, user_name, god_id, message):
     '''
     create by bigzhu at 16/04/06 19:46:10
     '''
-    message = storage(message)
 
-    m = public_bz.storage()
-    m.god_name = user_name
-    m.name = ins_name
-    m.m_type = 'instagram'
-    m.id_str = message.id
-    m.created_at = time_bz.timestampToDateTime(message.date)
+    m = dict(
+        god_name=user_name,
+        name=ins_name,
+        m_type='instagram',
+        out_id=message['id'],
+        out_created_at=time_bz.timestampToDateTime(message['date'])
+    )
     if message.get('caption'):
-        m.text = message.caption
+        m['text'] = message['caption']
     else:
-        m.text = None
-    m.extended_entities = json.dumps({'url': message.display_src})
-    m.href = 'https://www.instagram.com/p/%s/' % message.code
-    if message.__typename == 'GraphSidecar':  # mutiple image
-        edges = getMutipleImage(message.code)
+        m['text'] = None
+    m['extended_entities'] = {'url': message['display_src']}
+    m['href'] = 'https://www.instagram.com/p/%s/' % message['code']
+    if message['__typename'] == 'GraphSidecar':  # mutiple image
+        edges = getMutipleImage(message['code'])
         if not edges:
             return
         images = []
         for edge in edges:
             url = edge['node']['display_url']
             images.append({'url': url})
-        m.extended_entities = json.dumps(images)
-        m.type = 'images'
-    elif message.is_video:
-        m.type = 'video'
-        video_url = getVideoUrl(m.href)
-        m.extended_entities = json.dumps({'url': message.display_src, 'video_url': video_url})
+        m['extended_entities'] = images
+        m['type'] = 'images'
+    elif message['is_video']:
+        m['type'] = 'video'
+        video_url = getVideoUrl(m['href'])
+        m['extended_entities'] = {
+            'url': message['display_src'], 'video_url': video_url}
     else:
-        m.type = 'image'
-    id = pg.insertIfNotExist('message', m, "id_str='%s' and m_type='instagram'" % m.id_str)
-    if id is not None:
-        print '%s new instagram message %s' % (m.name, m.id_str)
-    # 肯定会有一条重复
-    # else:
-    #    print '%s 重复记录 %s' % (m.user_name, m.id_str)
-    return id
+        m['type'] = 'image'
 
-
-def loop(god_name=None):
-    gods = social_sync.getSocialGods('instagram', god_name)
-    for god in gods:
-        sync(god)
+    i, insert = db_bz.updateOrInsert(
+        Message, m, out_id=message['id'], m_type='instagram')
+    if insert:
+        print('%s new instagram %s' % (m['name'], m['out_id']))
 
 
 def main():
@@ -236,25 +234,25 @@ def main():
             getAllMedia(god_name)
         exit(0)
     if len(sys.argv) == 2:
-        user_name = (sys.argv[1])
-        loop(user_name)
+        god_name = (sys.argv[1])
+        loop(sync, 'instagram', god_name)
         exit(0)
     while True:
         try:
-            loop()
+            loop(sync, 'instagram')
         except CodeException as e:
-            print e
+            print(e)
         except SocketError as e:
             if e.errno != errno.ECONNRESET:
                 raise  # Not error we are looking for
-            print e
+            print(e)
         except ConnectionError as e:
-            print e
+            print(e)
         except ValueError as e:
-            print e
+            print(e)
         except requests.exceptions.ChunkedEncodingError as e:
-            print e
-        print datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(e)
+        print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         time.sleep(1200)
 
 

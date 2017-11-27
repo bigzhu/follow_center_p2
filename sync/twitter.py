@@ -62,8 +62,8 @@ def syncUserInfo(god_info):
         twitter_user = api.get_user(screen_name=twitter_name)
         # 不要用返回的name, 大小写会发生变化
         twitter = dict(
-            name=twitter_name,
             type='twitter',
+            name=twitter_name,
             count=twitter_user.followers_count,
             avatar=twitter_user.profile_image_url_https.replace(
                 '_normal', '_400x400'),
