@@ -67,14 +67,16 @@ def getNew(user_id, after, limit, search_key, god_name, not_types):
         after = time_bz.jsonToDatetime(after)
 
     if search_key is None and god_name is None:  # 不按 search 和 god 查时, 登录了取 last
-        after = session.query(model.Last.updated_at).filter(
-            model.Last.user_id == user_id).one_or_none()
+        if after is None:
+            after = session.query(model.Last.updated_at).filter(
+                model.Last.user_id == user_id).one_or_none()
         if after is None:  # 未登录或者没有last, 取最近两天
             after = datetime.date.today() - datetime.timedelta(days=6)
 
     sub_sql = session.query(all_message).subquery()
     if not_types:
-        sub_sql = session.query(sub_sql).filter(~sub_sql.c.m_type.in_(not_types)).subquery()
+        sub_sql = session.query(sub_sql).filter(
+            ~sub_sql.c.m_type.in_(not_types)).subquery()
 
     if user_id:
         sub_sql = addCollectInfo(sub_sql, user_id)
