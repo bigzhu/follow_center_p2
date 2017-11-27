@@ -15,8 +15,8 @@ class MessageConf(model_bz.Base):
     '''
     __tablename__ = 'message_conf'
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, default=datetime.datetime.now)
     user_id = Column(Text, nullable=False)
 
     no_types = Column(JSONB, nullable=False)  # 哪些social 类型不需要显示
@@ -29,8 +29,8 @@ class Remark(model_bz.Base):
     '''
     __tablename__ = 'remark'
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, default=datetime.datetime.now)
     user_id = Column(Text, nullable=False)
 
     god_id = Column(Integer, nullable=False, index=True)  # 实际上是你要follow的用户的id
@@ -44,8 +44,8 @@ class FollowWho(model_bz.Base):
     '''
     __tablename__ = 'follow_who'
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, default=datetime.datetime.now)
     user_id = Column(Text, nullable=False)
 
     god_id = Column(Integer, nullable=False, index=True)  # 实际上是你要follow的用户的id
@@ -58,8 +58,8 @@ class AnkiSave(model_bz.Base):
     '''
     __tablename__ = 'anki_save'
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, default=datetime.datetime.now)
     user_id = Column(Text, nullable=False)
 
     message_id = Column(Integer, nullable=False)
@@ -73,8 +73,8 @@ class God(model_bz.Base):
     '''
     __tablename__ = 'god'
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, default=datetime.datetime.now)
 
     name = Column(Text, nullable=False)  # 名字
     bio = Column(Text)  # 说明
@@ -84,7 +84,7 @@ class God(model_bz.Base):
     tumblr = Column(JSONB, nullable=False)  #
     facebook = Column(JSONB, nullable=False)  #
     cat = Column(Text)  # 说明
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now)
     is_public = Column(Integer, default=0)  # 是不是可以看到的，如果是，那么cat不能改
     is_black = Column(Integer, default=0)  # 是否黑名单
 
@@ -97,8 +97,8 @@ class Message(model_bz.Base):
     '''
     __tablename__ = 'message'
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, default=datetime.datetime.now)
 
     god_id = Column(Integer)  # 实际上是你要follow的用户的id
     god_name = Column(Text)  # 在本系统的主户名
@@ -123,8 +123,8 @@ class Collect(model_bz.Base):
     '''
     __tablename__ = 'collect'
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, default=datetime.datetime.now)
 
     user_id = Column(Text, nullable=False)
     message_id = Column(Integer, nullable=False)
@@ -137,8 +137,8 @@ class Last(model_bz.Base):
     '''
     __tablename__ = 'last'
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, default=datetime.datetime.now)
 
     user_id = Column(Text, nullable=False)
 
@@ -150,9 +150,9 @@ class Anki(model_bz.Base):
     '''
     __tablename__ = 'anki'
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)  # 建立时间
+    created_at = Column(DateTime, default=datetime.datetime.now)  # 建立时间
     updated_at = Column(
-        DateTime, default=datetime.datetime.utcnow)  # update 时间
+        DateTime, default=datetime.datetime.now)  # update 时间
 
     user_id = Column(Text, nullable=False)
     user_name = Column(Text, nullable=False)
