@@ -49,7 +49,6 @@ def api_no_types():
         else:
             data = []
 
-    print(data)
     return jsonify(data)
 
 
@@ -79,7 +78,10 @@ def api_login():
     user_name = data['user_name']
     # password = data['password']
     oauth_info = oauth_bz.getOauthInfo(None, user_name, 'github')
+
+    cookie.permanent = True
     cookie['user_id'] = str(oauth_info.id)
+
     return jsonify("0")
 
 
@@ -144,6 +146,7 @@ def api_last():
 
     last = request.get_json().get('last')
     last_oper.saveLast(user_id, last)
+    session.commit()
 
     unread_message_count = message_oper.getUnreadCount(user_id, last)
     return jsonify(unread_message_count)

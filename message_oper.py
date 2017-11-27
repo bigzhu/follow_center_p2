@@ -37,7 +37,6 @@ def getOld(user_id, before, limit, search_key, god_name):
     before = time_bz.jsonToDatetime(before)
     last = session.query(model.Last).filter(model.Last.id == 1).one()
     last.updated_at = before
-    print(last.updated_at)
     session.commit()
 
     sub_sql = session.query(sub_sql).filter(
