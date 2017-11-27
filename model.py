@@ -8,6 +8,20 @@ from sqlalchemy.dialects.postgresql import JSONB
 import model_bz
 
 
+class MessageConf(model_bz.Base):
+    '''
+    对message的配置, 不显示哪些 social 等
+    >>> MessageConf.__table__.create(checkfirst=True)
+    '''
+    __tablename__ = 'message_conf'
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    user_id = Column(Text, nullable=False)
+
+    no_types = Column(JSONB, nullable=False)  # 哪些social 类型不需要显示
+
+
 class Remark(model_bz.Base):
     '''
     create by bigzhu at 16/06/06 10:37:47 给god添加备注

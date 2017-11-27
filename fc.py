@@ -19,12 +19,38 @@ import god_oper
 import anki_oper
 from db_bz import session
 
+import db_bz
+import model
+
 
 app = Flask(__name__)
 app.json_encoder = ExtEncoder
 app.secret_key = conf.cookie_secret
 # js 需要访问 cookies
 app.config['SESSION_COOKIE_HTTPONLY'] = False
+
+
+@app.route('/api_no_types', methods=['GET', 'PUT'])
+def api_no_types():
+
+    data = '0'
+    user_id = cookie['user_id']
+    if request.method == 'PUT':
+        no_types = request.get_json()
+        if no_types:
+            data = dict(user_id=user_id, no_types=no_types)
+            db_bz.updateOrInsert(model.MessageConf, data, user_id=user_id)
+            session.commit()
+    elif request.method == 'GET':
+        no_types = db_bz.session.query(model.MessageConf.no_types).filter(
+            model.MessageConf.user_id == user_id).one_or_none()
+        if no_types:
+            data = no_types._asdict()['no_types']
+        else:
+            data = []
+
+    print(data)
+    return jsonify(data)
 
 
 @app.route('/api_anki', methods=['POST'])
