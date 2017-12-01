@@ -190,6 +190,11 @@ def shutdown_session(exception=None):
     session.remove()
 
 
+@app.errorhandler(Exception)
+def all_exception_handler(error):
+    return 'Error', 500
+
+
 if __name__ == '__main__':
     app.debug = True
     app.run()
