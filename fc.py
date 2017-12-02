@@ -21,6 +21,7 @@ from db_bz import session
 
 import db_bz
 import model
+import url_bz
 
 
 app = Flask(__name__)
@@ -28,6 +29,16 @@ app.json_encoder = ExtEncoder
 app.secret_key = conf.cookie_secret
 # js 需要访问 cookies
 app.config['SESSION_COOKIE_HTTPONLY'] = False
+
+
+@app.route('/api_sp/<burl>')
+def api_sp(burl):
+    '''
+    以前的proxy, 为了 anki 已加入的card 能显示出来, 还是要实现
+    '''
+    url = url_bz.decodeUrl(burl)
+    return redirect('/p/%s' % url, code=303)
+    return '0'
 
 
 @app.route('/api_no_types', methods=['GET', 'PUT'])
