@@ -39,7 +39,7 @@ def saveGraphqlMessage(ins_name, user_name, god_id, message):
         name=ins_name,
         m_type='instagram',
         out_id=message['id'],
-        out_created_at=time_bz.timestampToDateTime(
+        out_created_at=datetime.datetime.utcfromtimestamp(
             message['taken_at_timestamp'])
     )
 
