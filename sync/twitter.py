@@ -15,6 +15,7 @@ import sys
 import time
 import tweepy
 import exception_bz
+from model import Message
 import configparser
 config = configparser.ConfigParser()
 with open('./conf/twitter.ini', 'r') as cfg_file:
@@ -108,9 +109,9 @@ def sync(god_info, wait):
         if needDel(error_info):
             god_info.twitter = {'name': ''}
 
-        if 'Rate limit exceeded' in error_info:  # 调用太多
+        if 'Rate limit exceeded' in error_info or 'Max retries exceeded with url' in error_info:  # 调用太多
             if wait:
-                waitReset(god_name, twitter_name, god_id)
+                waitReset(god_info)
             else:
                 raise Exception('Twitter api 的调用次数用完了，请等个10分钟再添加!')
             return 'Rate limit exceeded'
@@ -163,7 +164,7 @@ def getRemaining():
     return remaining
 
 
-def waitReset(god_name, twitter_name, god_id):
+def waitReset(god_info):
     while True:
         try:
             remaining = getRemaining()
@@ -176,7 +177,7 @@ def waitReset(god_name, twitter_name, god_id):
         if remaining == 0:
             time.sleep(1200)
         else:
-            main(god_name, twitter_name, god_id, wait=True)
+            sync(god_info, wait=True)
             break
 
 
