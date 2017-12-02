@@ -9,14 +9,10 @@ modify by bigzhu at 15/11/28 11:36:18 可以查某个用户
 import sys
 sys.path.append("../../lib_py")
 sys.path.append("../")
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.sql.expression import cast
-from model import God, Message
 import db_bz
 import datetime
 import sys
 import time
-from datetime import timedelta
 import tweepy
 import exception_bz
 import configparser
@@ -101,8 +97,8 @@ def sync(god_info, wait):
         public_tweets = api.user_timeline(
             screen_name=twitter_name, include_rts=False, exclude_replies=True)
         for tweet in public_tweets:
-            print(tweet.created_at.tzname())
-            tweet.created_at += timedelta(hours=8)
+            # print(tweet.created_at.tzname())
+            # tweet.created_at += timedelta(hours=8)
             saveMessage(god_name, twitter_name, god_id, tweet)
         # oper.noMessageTooLong('twitter', user.twitter)
     except tweepy.error.TweepError:

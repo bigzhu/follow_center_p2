@@ -41,6 +41,7 @@ def getOld(user_id, before, limit, search_key, god_name):
 
     sub_sql = session.query(sub_sql).filter(
         sub_sql.c.out_created_at < before).subquery()
+    print(sub_sql)
 
     if god_name:
         sub_sql = session.query(sub_sql).filter(
