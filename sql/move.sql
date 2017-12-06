@@ -43,3 +43,5 @@ INSERT INTO public.remark(
 	id, created_at, updated_at, user_id, god_id, remark)
 SELECT id, created_date, stat_date, user_id, god_id, remark
 	FROM public_save.remark;
+
+update god set who_add = (select user_id from public_save.god g2 where g2.name=god.name)

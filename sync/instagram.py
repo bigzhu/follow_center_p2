@@ -26,6 +26,7 @@ from social_lib import loop
 from social_lib import getGods
 from model import Message
 import db_bz
+import exception_bz
 
 M_TYPE = 'instagram'
 
@@ -140,7 +141,16 @@ def sync(god, wait):
     headers = {'If-None-Match': etag}
     url = "https://www.instagram.com/%s" % ins_name
 
-    r = requests.get(url, headers=headers)
+    try:
+        r = requests.get(url, headers=headers)
+    except requests.exceptions.SSLError:
+        error_info = exception_bz.getExpInfo()
+        print(error_info)
+        if ' Max retries exceeded with url' in error_info:  # 段时间内调用太多
+            print('Max retries exceeded, sleep 600')
+            time.sleep(600)
+            sync(god, wait=True)
+
     if r.status_code == 200:
         etag = r.headers.get('etag')
         soup = BeautifulSoup(r.text)

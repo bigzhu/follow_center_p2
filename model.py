@@ -100,6 +100,7 @@ class God(model_bz.Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     is_public = Column(Integer, default=0)  # 是不是可以看到的，如果是，那么cat不能改
     is_black = Column(Integer, default=0)  # 是否黑名单
+    who_add = Column(Text)  # 谁添加的
 
 
 class Message(model_bz.Base):

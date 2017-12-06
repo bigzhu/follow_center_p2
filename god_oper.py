@@ -10,6 +10,18 @@ from model import God, FollowWho, Remark
 session = db_bz.session
 
 
+def makeSureSocialUnique(type, name):
+    '''
+    create by bigzhu at 17/05/20 08:35:04 确保 Social 不重复
+
+    >>> makeSureSocialUnique('twitter', 'bigzhu1')
+    '''
+    god = session.query(God).filter(
+        getattr(God, type)['name'].astext.ilike(name)).one_or_none()
+    if god is not None:
+        raise Exception('%s 和 god name %s 中的 %s 重复!' % (name, god.name, type))
+
+
 def addUserRemark(sub_sql, user_id):
     user_remark = session.query(Remark.remark, Remark.god_id).filter(
         Remark.user_id == user_id).subquery()
@@ -20,7 +32,7 @@ def addUserRemark(sub_sql, user_id):
 
 
 def getGod(god_name, user_id):
-    sub_sql = session.query(God).filter(God.name == god_name).subquery()
+    sub_sql = session.query(God).filter(God.name.ilike(god_name)).subquery()
     sub_sql = addAdminRemark(sub_sql)
     sub_sql = addUserRemark(sub_sql, user_id)
     if user_id:

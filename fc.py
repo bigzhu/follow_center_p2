@@ -22,6 +22,7 @@ from db_bz import session
 import db_bz
 import model
 import url_bz
+import follow_who_oper
 
 
 app = Flask(__name__)
@@ -29,6 +30,46 @@ app.json_encoder = ExtEncoder
 app.secret_key = conf.cookie_secret
 # js 需要访问 cookies
 app.config['SESSION_COOKIE_HTTPONLY'] = False
+
+
+@app.route('/api_god', methods=['GET', 'PUT', 'POST'])
+def api_god():
+    user_id = cookie['user_id']
+    if request.method == 'POST':
+        data = request.get_json()
+        name = data['name']
+        cat = data.get('cat', '大杂烩')
+        god = session.query(model.God).filter(
+            model.God.name.ilike(name)).one_or_none()
+        if god:
+            god_id = god.id
+            if cat != '大杂烩':
+                god.cat = cat
+        else:
+            god_oper.makeSureSocialUnique('twitter', name),
+            god_oper.makeSureSocialUnique('github', name),
+            god_oper.makeSureSocialUnique('instagram', name),
+            god_oper.makeSureSocialUnique('tumblr', name),
+            god = model.God(
+                name=name,
+                cat=cat,
+                twitter=name,
+                github=name,
+                instagram=name,
+                tumblr=name,
+                user_id=god_id,
+                who_add=user_id
+            )
+            session.add(god)
+        follow_who_oper.follow(user_id, god_id, make_sure=False)
+        data = god_oper.getGod(name, user_id)
+        return jsonify(data)
+    if request.method == 'POST':
+        god_name = request.args.get('god_name', None)
+        data = god_oper.getGod(god_name, user_id)
+        if data is None:
+            raise Exception('不存在 %s' % god_name)
+        return jsonify(data)
 
 
 @app.route('/api_sp/<burl>')
@@ -104,16 +145,6 @@ def api_old():
     limit = request.args.get('limit', 10)
     user_id = cookie.get('user_id')
     data = message_oper.getOld(user_id, before, limit, search_key, god_name)
-    return jsonify(data)
-
-
-@app.route('/api_god')
-def api_god():
-    god_name = request.args.get('god_name', None)
-    user_id = cookie.get('user_id')
-    data = god_oper.getGod(god_name, user_id)
-    if data is None:
-        raise Exception('不存在 %s' % god_name)
     return jsonify(data)
 
 

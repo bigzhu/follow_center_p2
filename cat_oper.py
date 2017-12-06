@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import sys
+sys.path.append("../lib_py")
 
 from model import FollowWho
 from model import God
