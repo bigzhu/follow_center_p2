@@ -8,6 +8,9 @@ from flask import Flask
 from flask import request
 from flask import jsonify
 from flask import redirect
+from flask import url_for
+from flask import flash
+
 from flask_bz import ExtEncoder
 from flask import session as cookie
 import message_oper
@@ -29,8 +32,9 @@ from sync import instagram
 from sync import tumblr
 from sync import github
 # from sync import github
-import exception_bz
+# import exception_bz
 import collect_oper
+from flask_oauthlib.client import OAuth
 
 
 app = Flask(__name__)
@@ -38,6 +42,70 @@ app.json_encoder = ExtEncoder
 app.secret_key = conf.cookie_secret
 # js 需要访问 cookies
 app.config['SESSION_COOKIE_HTTPONLY'] = False
+oauth = OAuth(app)
+
+
+import configparser
+config = configparser.ConfigParser()
+with open('conf/twitter.ini', 'r') as cfg_file:
+    config.readfp(cfg_file)
+    consumer_key = config.get('secret', 'consumer_key')
+    consumer_secret = config.get('secret', 'consumer_secret')
+    access_token = config.get('secret', 'access_token')
+    access_token_secret = config.get('secret', 'access_token_secret')
+
+twitter = oauth.remote_app(
+    'twitter',
+    consumer_key=consumer_key,
+    consumer_secret=consumer_secret,
+    base_url='https://api.twitter.com/1.1/',
+    request_token_url='https://api.twitter.com/oauth/request_token',
+    access_token_url='https://api.twitter.com/oauth/access_token',
+    authorize_url='https://api.twitter.com/oauth/authorize'
+)
+
+
+@twitter.tokengetter
+def get_twitter_token():
+    if 'twitter_oauth' in cookie:
+        resp = cookie['twitter_oauth']
+        return resp['oauth_token'], resp['oauth_token_secret']
+
+
+@app.route('/api_twitter')
+def api_twitter():
+    callback_url = url_for('api_twitter_oauthorized',
+                           next=request.args.get('next'), _external=True)
+    print(callback_url)
+    return twitter.authorize(callback=callback_url or request.referrer or None)
+
+
+@app.route('/api_twitter_oauthorized')
+def api_twitter_oauthorized():
+    resp = twitter.authorized_response()
+
+    if resp is None:
+        flash('You denied the request to sign in.')
+    else:
+        cookie['twitter_oauth'] = resp
+        resp = twitter.request('account/verify_credentials.json')
+        if resp.status == 200:
+            user = resp.data
+        else:
+            flash('Unable to load user info from Twitter.')
+
+        oauth_info = dict(
+            out_id=user['id'],
+            type='twitter',
+            name=user['name'],
+            avatar=user['profile_image_url_https'],
+            location=user['location']
+        )
+
+        oauth_info, is_insert = oauth_bz.saveAndGetOauth(oauth_info)
+        cookie['user_id'] = str(oauth_info.id)
+
+    return redirect('/')
 
 
 @app.route('/api_follow', methods=['POST', 'DELETE'])
