@@ -22,8 +22,8 @@ import configparser
 config = configparser.ConfigParser()
 with open('conf/github.ini', 'r') as cfg_file:
     config.readfp(cfg_file)
-    client_id = config.get('secret', 'client_id')
-    client_secret = config.get('secret', 'client_secret')
+    client_id = config.get('secret', 'consumer_key')
+    client_secret = config.get('secret', 'consumer_secret')
 params = {'client_id': client_id, 'client_secret': client_secret}
 
 

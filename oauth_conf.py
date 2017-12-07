@@ -28,6 +28,26 @@ def getTwitter(app):
     return twitter
 
 
+def getGithub(app):
+    with open('conf/github.ini', 'r') as cfg_file:
+        config.readfp(cfg_file)
+        consumer_key = config.get('secret', 'consumer_key')
+        consumer_secret = config.get('secret', 'consumer_secret')
+    oauth = OAuth(app)
+    github = oauth.remote_app(
+        'github',
+        consumer_key=consumer_key,
+        consumer_secret=consumer_secret,
+        request_token_params={'scope': 'user:email'},
+        base_url='https://api.github.com/',
+        request_token_url=None,
+        access_token_method='POST',
+        access_token_url='https://github.com/login/oauth/access_token',
+        authorize_url='https://github.com/login/oauth/authorize'
+    )
+    return github
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod(verbose=False, optionflags=doctest.ELLIPSIS)

@@ -46,6 +46,44 @@ app.config['SESSION_COOKIE_HTTPONLY'] = False
 oauth = OAuth(app)
 
 twitter = oauth_conf.getTwitter(app)
+github = oauth_conf.getGithub(app)
+
+
+@github.tokengetter
+def get_github_oauth_token():
+    return cookie.get('github_token')
+
+
+@app.route('/api_github_oauthorized')
+def api_github_oauthorized():
+    resp = github.authorized_response()
+    if resp is None or resp.get('access_token') is None:
+        return 'Access denied: reason=%s error=%s resp=%s' % (
+            request.args['error'],
+            request.args['error_description'],
+            resp
+        )
+    print(resp['access_token'])
+    cookie['github_token'] = (resp['access_token'], '')
+    me = github.get('user')
+    user = me.data
+    oauth_info = dict(
+        out_id=user['id'],
+        type='github',
+        name=user['login'],
+        avatar=user['avatar_url'],
+        email=user['email'],
+        location=user['location']
+    )
+
+    oauth_info, is_insert = oauth_bz.saveAndGetOauth(oauth_info)
+    cookie['user_id'] = str(oauth_info.id)
+    return redirect('/')
+
+
+@app.route('/api_github')
+def api_github():
+    return github.authorize(callback=url_for('api_github_oauthorized', _external=True))
 
 
 @twitter.tokengetter
