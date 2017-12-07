@@ -25,7 +25,7 @@ import model
 import url_bz
 import follow_who_oper
 from sync import twitter
-from sync import instagram 
+from sync import instagram
 from sync import tumblr
 from sync import github
 # from sync import github
@@ -37,6 +37,22 @@ app.json_encoder = ExtEncoder
 app.secret_key = conf.cookie_secret
 # js 需要访问 cookies
 app.config['SESSION_COOKIE_HTTPONLY'] = False
+
+
+@app.route('/api_remark', methods=['POST'])
+def api_remark():
+    data = request.get_json()
+    god_id = data['god_id']
+    remark = data['remark']
+    user_id = cookie['user_id']
+    remark = dict(
+        user_id=user_id,
+        remark=remark,
+        god_id=god_id
+    )
+    db_bz.updateOrInsert(model.Remark, remark, user_id=user_id, god_id=god_id)
+    session.commit()
+    return jsonify('0')
 
 
 @app.route('/api_social')
