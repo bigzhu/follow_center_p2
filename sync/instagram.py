@@ -22,8 +22,8 @@ from bs4 import BeautifulSoup
 
 from socket import error as SocketError
 import errno
-from social_lib import loop
-from social_lib import getGods
+from .social_lib import loop
+from .social_lib import getGods
 from model import Message
 import db_bz
 import exception_bz

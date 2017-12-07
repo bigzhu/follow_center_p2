@@ -39,10 +39,10 @@ def getGithubUser(github_name, god_name):
         saveUser(god_name, github_name, github_user)
         return github_user
     except requests.exceptions.ConnectionError:
-        print public_bz.getExpInfoAll()
+        print(public_bz.getExpInfoAll())
         return
     except ValueError:
-        print public_bz.getExpInfoAll()
+        print(public_bz.getExpInfoAll())
         return
 
 
@@ -63,7 +63,7 @@ def main(god, wait):
     try:
         r = requests.get('https://api.github.com/users/%s/events' % github_name, headers=headers, params=params)
     except requests.exceptions.ConnectionError:
-        print public_bz.getExpInfoAll()
+        print(public_bz.getExpInfoAll())
         return
     if r.status_code == 200:
         etag = r.headers['etag']
@@ -105,7 +105,7 @@ def saveMessage(god_name, github_name, god_id, message):
     m.href = None
     id = pg.insertIfNotExist('message', m, "id_str='%s' and m_type='github'" % m.id_str)
     if id is not None:
-        print '%s new github %s' % (m.name, m.id_str)
+        print('%s new github %s' % (m.name, m.id_str))
     return id
 
 
@@ -116,8 +116,8 @@ def saveUser(god_name, github_name, user, sync_key=None):
         # social_user.name = user['login']
         social_user.name = github_name
     except Exception as e:
-        print e
-        print user
+        print(e)
+        print(user)
     social_user.type = 'github'
     if user.get('followers') is None:
         social_user.count = -1
@@ -148,5 +148,5 @@ if __name__ == '__main__':
         exit(0)
     while True:
         loop(wait=True)
-        print datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         time.sleep(1200)

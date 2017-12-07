@@ -13,6 +13,8 @@ session = db_bz.session
 
 
 def getGods(type, god_name):
+    '''
+    '''
     q = session.query(God).filter(getattr(God, type).isnot(None)
                                   ).filter(getattr(God, type)['name'] != cast("", JSONB))
     if god_name:

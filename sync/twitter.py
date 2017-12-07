@@ -29,7 +29,7 @@ auth.set_access_token(access_token, access_token_secret)
 
 api = tweepy.API(auth)
 session = db_bz.session
-from social_lib import loop
+from .social_lib import loop
 
 
 def needDel(error_info):

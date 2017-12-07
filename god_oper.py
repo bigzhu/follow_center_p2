@@ -38,8 +38,9 @@ def getGod(god_name, user_id):
     if user_id:
         sub_sql = addUserFollowedInfo(sub_sql, user_id)
     data = session.query(sub_sql).one_or_none()
-    if data is not None:
-        return data._asdict()
+    return data
+    # if data is not None:
+    #    return data._asdict()
 
 
 def getGods(user_id, cat, before, limit, followed):

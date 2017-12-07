@@ -19,10 +19,16 @@ import god_oper
 import anki_oper
 from db_bz import session
 
+from model import God
 import db_bz
 import model
 import url_bz
 import follow_who_oper
+from sync import twitter
+from sync import instagram 
+from sync import tumblr
+# from sync import github
+import exception_bz
 
 
 app = Flask(__name__)
@@ -30,6 +36,59 @@ app.json_encoder = ExtEncoder
 app.secret_key = conf.cookie_secret
 # js 需要访问 cookies
 app.config['SESSION_COOKIE_HTTPONLY'] = False
+
+
+@app.route('/api_social')
+def api_social():
+    name = request.args.get('name')
+    type = request.args.get('type')
+    # user_id = cookie['user_id']
+    god = session.query(God).filter(God.name.ilike(name)).one_or_none()
+    if god is None:
+        raise Exception('没有正确加入 god %s' % name)
+
+    social = getattr(god, type)
+    if social.get('count'):
+        data = social
+    else:
+        if type == 'twitter':
+            twitter.sync(god, False)
+            data = getattr(god, type)
+        # if type == 'github':
+        #     import github
+        #     github.getGithubUser(name, name)
+        if type == 'instagram':
+            instagram.sync(god, False)
+            data = getattr(god, type)
+        if type == 'tumblr':
+            tumblr.sync(god, False)
+            data = getattr(god, type)
+    session.commit()
+    return jsonify(data)
+    '''
+
+        if god[type].get('count'):
+            info = god[type]
+        else:
+            if type == 'twitter':
+                import twitter
+                twitter.getTwitterUser(name, name)
+            if type == 'github':
+                import github
+                github.getGithubUser(name, name)
+            if type == 'instagram':
+                import instagram
+                instagram.loop(name)  # 用的是爬虫, 单取 user 意义不大
+            if type == 'tumblr':
+                import tumblr
+                tumblr.getTumblrUserNotSaveKey(name, name)
+            if type == 'facebook':
+                import facebook
+                facebook.getFacebookUser(name, name)
+            info = god_oper.getTheGodInfoByName(name, self.current_user)[type]
+        self.data.info = info
+        self.write(json.dumps(self.data, cls=json_bz.ExtEncoder))
+        '''
 
 
 @app.route('/api_god', methods=['GET', 'PUT', 'POST'])
@@ -42,7 +101,6 @@ def api_god():
         god = session.query(model.God).filter(
             model.God.name.ilike(name)).one_or_none()
         if god:
-            god_id = god.id
             if cat != '大杂烩':
                 god.cat = cat
         else:
@@ -53,16 +111,21 @@ def api_god():
             god = model.God(
                 name=name,
                 cat=cat,
-                twitter=name,
-                github=name,
-                instagram=name,
-                tumblr=name,
-                user_id=god_id,
+                twitter={'name': name},
+                github={'name': name},
+                instagram={'name': name},
+                tumblr={'name': name},
+                facebook={'name': name},
                 who_add=user_id
             )
             session.add(god)
-        follow_who_oper.follow(user_id, god_id, make_sure=False)
+            session.flush()
+            session.refresh(god)  # 为了取到 id, 要执行这个
+        follow_who_oper.follow(user_id, god.id, make_sure=False)
         data = god_oper.getGod(name, user_id)
+        if data:
+            data = data._asdict()
+        session.commit()
         return jsonify(data)
     if request.method == 'POST':
         god_name = request.args.get('god_name', None)
@@ -232,9 +295,9 @@ def shutdown_session(exception=None):
     session.remove()
 
 
-@app.errorhandler(Exception)
-def all_exception_handler(error):
-    return 'Error', 500
+# @app.errorhandler(Exception)
+# def all_exception_handler(error):
+#     return exception_bz.getExpInfoAll(True)
 
 
 if __name__ == '__main__':

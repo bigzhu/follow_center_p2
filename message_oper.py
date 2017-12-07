@@ -41,7 +41,6 @@ def getOld(user_id, before, limit, search_key, god_name):
 
     sub_sql = session.query(sub_sql).filter(
         sub_sql.c.out_created_at < before).subquery()
-    print(sub_sql)
 
     if god_name:
         sub_sql = session.query(sub_sql).filter(
@@ -121,11 +120,10 @@ def getNew(user_id, after, limit, search_key, god_name, not_types):
     if (len(messages) == 0):
         if (user_id):
             data['followed_god_count'] = session.query(FollowWho).filter(
-                FollowWho.user_id == user_id).filter(
-                ~sub_sql.c.m_type.in_(not_types)).count()
+                FollowWho.user_id == user_id).count()
+            print(data['followed_god_count'])
         else:
             data['followed_god_count'] = 0
-    print(after)
 
     return data
 
