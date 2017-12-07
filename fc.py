@@ -40,6 +40,22 @@ app.secret_key = conf.cookie_secret
 app.config['SESSION_COOKIE_HTTPONLY'] = False
 
 
+@app.route('/api_follow', methods=['POST', 'DELETE'])
+def api_follow():
+    user_id = cookie['user_id']
+    if request.method == 'POST':
+        data = request.get_json()
+        god_id = data['god_id']
+        follow_who_oper.follow(user_id, god_id)
+        session.commit()
+        return jsonify('0')
+    elif request.method == 'DELETE':
+        god_id = request.args['god_id']
+        follow_who_oper.unFollow(user_id, god_id)
+        session.commit()
+        return jsonify('0')
+
+
 @app.route('/api_collect', methods=['GET', 'POST', 'DELETE'])
 def api_collect():
     user_id = cookie['user_id']
@@ -47,13 +63,13 @@ def api_collect():
         data = request.get_json()
         message_id = data['message_id']
         collect_oper.collect(message_id, user_id)
+        session.commit()
         return jsonify('0')
     elif request.method == 'GET':
         data = collect_oper.getCollect(user_id)
         return jsonify(data)
     elif request.method == 'DELETE':
         message_id = request.args['message_id']
-        print(message_id)
         collect_oper.deleteCollect(message_id, user_id)
         session.commit()
         return jsonify('0')
