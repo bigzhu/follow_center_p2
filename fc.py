@@ -30,6 +30,7 @@ from sync import tumblr
 from sync import github
 # from sync import github
 import exception_bz
+import collect_oper
 
 
 app = Flask(__name__)
@@ -37,6 +38,19 @@ app.json_encoder = ExtEncoder
 app.secret_key = conf.cookie_secret
 # js 需要访问 cookies
 app.config['SESSION_COOKIE_HTTPONLY'] = False
+
+
+@app.route('/api_collect', methods=['GET', 'POST', 'DELETE'])
+def api_collect():
+    user_id = cookie['user_id']
+    if request.method == 'POST':
+        data = request.get_json()
+        message_id = data['message_id']
+        collect_oper.collect(message_id, user_id)
+        return jsonify('0')
+    elif request.method == 'GET':
+        data = collect_oper.getCollect(user_id)
+        return jsonify(data)
 
 
 @app.route('/api_remark', methods=['POST'])
