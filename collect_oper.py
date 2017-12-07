@@ -8,6 +8,14 @@ import model
 import message_oper
 from db_bz import session
 all_message = db_bz.getReflect('all_message')
+from sqlalchemy import and_
+
+
+def deleteCollect(message_id, user_id):
+    count = session.query(model.Collect).filter(and_(
+        model.Collect.message_id == message_id, model.Collect.user_id == user_id)).delete()
+    if count != 1:
+        raise Exception('没有正确的uncollect, uncollect %s 条' % count)
 
 
 def getCollect(user_id):

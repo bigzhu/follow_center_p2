@@ -51,6 +51,12 @@ def api_collect():
     elif request.method == 'GET':
         data = collect_oper.getCollect(user_id)
         return jsonify(data)
+    elif request.method == 'DELETE':
+        message_id = request.args['message_id']
+        print(message_id)
+        collect_oper.deleteCollect(message_id, user_id)
+        session.commit()
+        return jsonify('0')
 
 
 @app.route('/api_remark', methods=['POST'])
