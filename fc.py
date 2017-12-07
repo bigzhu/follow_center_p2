@@ -35,6 +35,7 @@ from sync import github
 # import exception_bz
 import collect_oper
 from flask_oauthlib.client import OAuth
+import oauth_conf
 
 
 app = Flask(__name__)
@@ -44,25 +45,7 @@ app.secret_key = conf.cookie_secret
 app.config['SESSION_COOKIE_HTTPONLY'] = False
 oauth = OAuth(app)
 
-
-import configparser
-config = configparser.ConfigParser()
-with open('conf/twitter.ini', 'r') as cfg_file:
-    config.readfp(cfg_file)
-    consumer_key = config.get('secret', 'consumer_key')
-    consumer_secret = config.get('secret', 'consumer_secret')
-    access_token = config.get('secret', 'access_token')
-    access_token_secret = config.get('secret', 'access_token_secret')
-
-twitter = oauth.remote_app(
-    'twitter',
-    consumer_key=consumer_key,
-    consumer_secret=consumer_secret,
-    base_url='https://api.twitter.com/1.1/',
-    request_token_url='https://api.twitter.com/oauth/request_token',
-    access_token_url='https://api.twitter.com/oauth/access_token',
-    authorize_url='https://api.twitter.com/oauth/authorize'
-)
+twitter = oauth_conf.getTwitter(app)
 
 
 @twitter.tokengetter
@@ -76,7 +59,6 @@ def get_twitter_token():
 def api_twitter():
     callback_url = url_for('api_twitter_oauthorized',
                            next=request.args.get('next'), _external=True)
-    print(callback_url)
     return twitter.authorize(callback=callback_url or request.referrer or None)
 
 
