@@ -47,6 +47,60 @@ oauth = OAuth(app)
 
 twitter = oauth_conf.getTwitter(app)
 github = oauth_conf.getGithub(app)
+qq = oauth_conf.getQQ(app)
+
+
+@qq.tokengetter
+def get_qq_oauth_token():
+    return cookie.get('qq_token')
+
+
+@app.route('/api_qq_info')
+def api_qq_info():
+    if 'qq_token' in cookie:
+        data = oauth_conf.update_qq_api_request_data()
+        resp = qq.get('/user/get_user_info', data=data)
+        if resp.status == 200:
+            user = oauth_conf.json_to_dict(resp.data)
+            oauth_info = dict(
+                out_id=0,
+                type='qq',
+                name=user['nickname'],
+                avatar=user['figureurl_qq_2'],
+                email=user.get('email'),
+                location=user.get('province') + user.get('city')
+            )
+
+            oauth_info, is_insert = oauth_bz.saveAndGetOauth(oauth_info)
+            cookie['user_id'] = str(oauth_info.id)
+            return redirect('/')
+        else:
+            flash('Unable to load user info from QQ.')
+
+
+@app.route('/api_qq')  # 回调地址修改要备案
+def api_qq_oauthorized():
+    resp = qq.authorized_response()
+    if resp is None:
+        return 'Access denied: reason=%s error=%s' % (
+            request.args['error_reason'],
+            request.args['error_description']
+        )
+    cookie['qq_token'] = (resp['access_token'], '')
+
+    # Get openid via access_token, openid and access_token are needed for API calls
+    resp = qq.get('/oauth2.0/me', {'access_token': cookie['qq_token'][0]})
+    resp = oauth_conf.json_to_dict(resp.data)
+    if isinstance(resp, dict):
+        cookie['qq_openid'] = resp.get('openid')
+
+    return redirect(url_for('api_qq_info'))
+
+
+@app.route('/api_qq_login')
+def api_qq():
+    print(url_for('api_qq_oauthorized', _external=True))
+    return qq.authorize(callback='https://follow.center/api_qq')
 
 
 @github.tokengetter
