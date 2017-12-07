@@ -27,6 +27,7 @@ import follow_who_oper
 from sync import twitter
 from sync import instagram 
 from sync import tumblr
+from sync import github
 # from sync import github
 import exception_bz
 
@@ -54,9 +55,9 @@ def api_social():
         if type == 'twitter':
             twitter.sync(god, False)
             data = getattr(god, type)
-        # if type == 'github':
-        #     import github
-        #     github.getGithubUser(name, name)
+        if type == 'github':
+            github.sync(god, False)
+            data = getattr(god, type)
         if type == 'instagram':
             instagram.sync(god, False)
             data = getattr(god, type)
