@@ -117,7 +117,7 @@ def sync(god, wait):
     try:
         syncUserInfo(god)
     except NoChange as e:
-        print(e)
+        # print(e)
         return
     except NoUser as e:
         print(e)
