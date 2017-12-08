@@ -8,6 +8,36 @@ from sqlalchemy import and_, func, tuple_
 from sqlalchemy import desc
 from model import God, FollowWho, Remark
 session = db_bz.session
+import datetime
+
+
+def updateGod(data):
+    '''
+    update god
+    >>> updateGod({'name':'jinzhu', 'twitter': {"name": "zhangjinzhu", "type": "twitter", "count": 13, "avatar": "https://pbs.twimg.com/profile_images/55291284/jin_profile2_400x400.jpg", "description": ""}})
+    '''
+    name = data['name']
+
+    for type in ['twitter', 'github', 'instagram', 'tumblr', 'facebook']:
+        makeOtherSureSocialUnique(name, type, data[type]['name'])
+
+    data['updated_at'] = datetime.datetime.utcnow()
+    god = session.query(God).filter(God.name.ilike(name)).one()
+    for key, value in data.items():
+        setattr(god, key, value)
+    #if count != 1:
+    #    raise Exception("修改失败" + count)
+
+
+def makeOtherSureSocialUnique(name, type, scoial_name):
+    '''
+    除了自已, 其他有没有重复的
+    '''
+    god = session.query(God).filter(~God.name.ilike(name)).filter(
+        getattr(God, type)['name'].astext.ilike(scoial_name)).one_or_none()
+    if god is not None:
+        raise Exception('%s 和 god name %s 中的 %s 重复!' %
+                        (scoial_name, god.name, type))
 
 
 def makeSureSocialUnique(type, name):

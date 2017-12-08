@@ -259,30 +259,6 @@ def api_social():
             data = getattr(god, type)
     session.commit()
     return jsonify(data)
-    '''
-
-        if god[type].get('count'):
-            info = god[type]
-        else:
-            if type == 'twitter':
-                import twitter
-                twitter.getTwitterUser(name, name)
-            if type == 'github':
-                import github
-                github.getGithubUser(name, name)
-            if type == 'instagram':
-                import instagram
-                instagram.loop(name)  # 用的是爬虫, 单取 user 意义不大
-            if type == 'tumblr':
-                import tumblr
-                tumblr.getTumblrUserNotSaveKey(name, name)
-            if type == 'facebook':
-                import facebook
-                facebook.getFacebookUser(name, name)
-            info = god_oper.getTheGodInfoByName(name, self.current_user)[type]
-        self.data.info = info
-        self.write(json.dumps(self.data, cls=json_bz.ExtEncoder))
-        '''
 
 
 @app.route('/api_god', methods=['GET', 'PUT', 'POST'])
@@ -325,6 +301,11 @@ def api_god():
         if data is None:
             raise Exception('不存在 %s' % god_name)
         return jsonify(data)
+    if request.method == 'PUT':
+        data = request.get_json()
+        god_oper.updateGod(data)
+        session.commit()
+        return jsonify("0")
 
 
 @app.route('/api_sp/<burl>')
