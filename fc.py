@@ -376,11 +376,12 @@ def api_login():
 @app.route('/api_old')
 def api_old():
     before = request.args.get('before')
+    not_types = request.args.getlist('not[]')
     god_name = request.args.get('god_name')
     search_key = request.args.get('search_key')
     limit = request.args.get('limit', 10)
     user_id = cookie.get('user_id')
-    data = message_oper.getOld(user_id, before, limit, search_key, god_name)
+    data = message_oper.getOld(user_id, before, limit, search_key, god_name, not_types)
     return jsonify(data)
 
 

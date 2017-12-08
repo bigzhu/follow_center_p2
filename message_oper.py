@@ -19,8 +19,11 @@ from sqlalchemy import desc
 all_message = db_bz.getReflect('all_message')
 
 
-def getOld(user_id, before, limit, search_key, god_name):
+def getOld(user_id, before, limit, search_key, god_name, not_types):
     sub_sql = session.query(all_message).subquery()
+    if not_types:
+        sub_sql = session.query(sub_sql).filter(
+            ~sub_sql.c.m_type.in_(not_types)).subquery()
     if user_id:
         sub_sql = addCollectInfo(sub_sql, user_id)
         sub_sql = addAnkiInfo(sub_sql, user_id)

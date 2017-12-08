@@ -69,7 +69,7 @@ def saveMessage(god_name, tumblr_name, god_id, blog):
         name=tumblr_name,
         out_id=str(blog['id']),
         m_type='tumblr',
-        created_at=datetime.datetime.utcfromtimestamp(blog['timestamp']),
+        out_created_at=datetime.datetime.utcfromtimestamp(blog['timestamp']),
         href=blog.get('short_url')
     )
     type = blog.get('type')
