@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "74fb40591f099682d07c63ad62085fdbbe9dbb3815dddcd86031bee349295180"
+            "sha256": "cfc9231636cfb8cdfd0b609d18000b958404648919951a596bfa9408a1eeb0dc"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -74,6 +74,13 @@
                 "sha256:74eb646b3e0b3b63d4adc36024d163033fc6d01f32cf01f9e9b6c8b562313ec6"
             ],
             "version": "==0.12"
+        },
+        "flask-oauthlib": {
+            "hashes": [
+                "sha256:3afd6b4bd886a3a38e30894dc1ecbb8781368a3ffc63bc84d6cbc94f1e29f553",
+                "sha256:bcd6f2f4f58c764824a1de31b9beae22585c5191992d298c0be0b3118dfcbdc6"
+            ],
+            "version": "==0.9.4"
         },
         "httplib2": {
             "hashes": [
@@ -216,10 +223,10 @@
         },
         "werkzeug": {
             "hashes": [
-                "sha256:e8549c143af3ce6559699a01e26fa4174f4c591dbee0a499f3cd4c3781cdec3d",
-                "sha256:903a7b87b74635244548b30d30db4c8947fe64c5198f58899ddcd3a13c23bb26"
+                "sha256:f3000aa146ce8a9da8ca3e978e0e931c2a58eb56c323a5efb6b4307f7832b549",
+                "sha256:6246e5fc98a505824113fb6aca993d45ea284a2bcffdc2c65d0c538e53e4abd3"
             ],
-            "version": "==0.12.2"
+            "version": "==0.13"
         }
     },
     "develop": {}

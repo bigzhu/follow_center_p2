@@ -27,11 +27,10 @@ import db_bz
 import model
 import url_bz
 import follow_who_oper
-from sync import twitter
-from sync import instagram
-from sync import tumblr
-from sync import github
-# from sync import github
+from sync import twitter as twitter_sync
+from sync import instagram as instagram_sync
+from sync import tumblr as tumblr_sync
+from sync import github as github_sync
 # import exception_bz
 import collect_oper
 from flask_oauthlib.client import OAuth
@@ -247,16 +246,16 @@ def api_social():
         data = social
     else:
         if type == 'twitter':
-            twitter.sync(god, False)
+            twitter_sync.sync(god, False)
             data = getattr(god, type)
         if type == 'github':
-            github.sync(god, False)
+            github_sync.sync(god, False)
             data = getattr(god, type)
         if type == 'instagram':
-            instagram.sync(god, False)
+            instagram_sync.sync(god, False)
             data = getattr(god, type)
         if type == 'tumblr':
-            tumblr.sync(god, False)
+            tumblr_sync.sync(god, False)
             data = getattr(god, type)
     session.commit()
     return jsonify(data)
@@ -318,11 +317,9 @@ def api_god():
             session.refresh(god)  # 为了取到 id, 要执行这个
         follow_who_oper.follow(user_id, god.id, make_sure=False)
         data = god_oper.getGod(name, user_id)
-        if data:
-            data = data._asdict()
         session.commit()
         return jsonify(data)
-    if request.method == 'POST':
+    if request.method == 'GET':
         god_name = request.args.get('god_name', None)
         data = god_oper.getGod(god_name, user_id)
         if data is None:

@@ -20,6 +20,7 @@ tweepy = "*"
 flask = "*"
 python-dateutil = "*"
 flask-oauth = "*"
+flask-oauthlib = "*"
 
 
 [pipenv]
