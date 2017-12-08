@@ -13,7 +13,6 @@ import exception_bz
 import db_bz
 from model import Message
 import sys
-import json
 import time
 M_TYPE = 'tumblr'
 API_KEY = 'w0qnSK6sUtFyapPHzZG7PjbTXbsYDoilrnmrblIbA56GTl0ULL'
@@ -79,10 +78,9 @@ def saveMessage(god_name, tumblr_name, god_id, blog):
         m['text'] = blog.get('body')
     elif type == 'photo':
         m['text'] = blog.get('caption')
-        m['extended_entities'] = json.dumps(blog.get('photos'))
+        m['extended_entities'] = blog.get('photos')
     elif type == 'video':
-        m['extended_entities'] = json.dumps(
-            {'video_url': blog.get('video_url')})
+        m['extended_entities'] = {'video_url': blog.get('video_url')}
     m['content'] = None
 
     i, insert = db_bz.updateOrInsert(
