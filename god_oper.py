@@ -25,7 +25,7 @@ def updateGod(data):
     god = session.query(God).filter(God.name.ilike(name)).one()
     for key, value in data.items():
         setattr(god, key, value)
-    #if count != 1:
+    # if count != 1:
     #    raise Exception("修改失败" + count)
 
 
@@ -33,23 +33,27 @@ def makeOtherSureSocialUnique(name, type, scoial_name):
     '''
     除了自已, 其他有没有重复的
     '''
-    god = session.query(God).filter(~God.name.ilike(name)).filter(
-        getattr(God, type)['name'].astext.ilike(scoial_name)).one_or_none()
-    if god is not None:
+    if scoial_name == '':
+        return
+    gods = session.query(God).filter(~God.name.ilike(name)).filter(
+        getattr(God, type)['name'].astext.ilike(scoial_name)).all()
+    if gods:
         raise Exception('%s 和 god name %s 中的 %s 重复!' %
-                        (scoial_name, god.name, type))
+                        (scoial_name, name, type))
 
 
-def makeSureSocialUnique(type, name):
+def makeSureSocialUnique(type, scoial_name):
     '''
     create by bigzhu at 17/05/20 08:35:04 确保 Social 不重复
 
     >>> makeSureSocialUnique('twitter', 'bigzhu1')
     '''
+    if scoial_name == '':
+        return
     god = session.query(God).filter(
-        getattr(God, type)['name'].astext.ilike(name)).one_or_none()
+        getattr(God, type)['name'].astext.ilike(scoial_name)).one_or_none()
     if god is not None:
-        raise Exception('%s 和 god name %s 中的 %s 重复!' % (name, god.name, type))
+        raise Exception('%s 和 god name %s 中的 %s 重复!' % (scoial_name, god.name, type))
 
 
 def addUserRemark(sub_sql, user_id):

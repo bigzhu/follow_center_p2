@@ -17,7 +17,7 @@ import json
 import time
 M_TYPE = 'tumblr'
 API_KEY = 'w0qnSK6sUtFyapPHzZG7PjbTXbsYDoilrnmrblIbA56GTl0ULL'
-from .social_lib import loop
+from sync.social_lib import loop
 
 
 def syncUserInfo(god):
