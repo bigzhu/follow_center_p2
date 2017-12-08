@@ -10,6 +10,26 @@ config = configparser.ConfigParser()
 from flask import session
 
 
+def getFacebook(app):
+    with open('conf/facebook.ini', 'r') as cfg_file:
+        config.readfp(cfg_file)
+        consumer_key = config.get('secret', 'consumer_key')
+        consumer_secret = config.get('secret', 'consumer_secret')
+    oauth = OAuth(app)
+    facebook = oauth.remote_app(
+        'facebook',
+        consumer_key=consumer_key,
+        consumer_secret=consumer_secret,
+        request_token_params={'scope': 'email'},
+        base_url='https://graph.facebook.com',
+        request_token_url=None,
+        access_token_url='/oauth/access_token',
+        access_token_method='GET',
+        authorize_url='https://www.facebook.com/dialog/oauth'
+    )
+    return facebook
+
+
 def update_qq_api_request_data(data={}):
     '''Update some required parameters for OAuth2.0 API calls'''
     with open('conf/qq.ini', 'r') as cfg_file:

@@ -33,8 +33,8 @@ from sync import tumblr as tumblr_sync
 from sync import github as github_sync
 # import exception_bz
 import collect_oper
-from flask_oauthlib.client import OAuth
 import oauth_conf
+from flask_oauthlib.client import OAuth, OAuthException
 
 
 app = Flask(__name__)
@@ -47,6 +47,49 @@ oauth = OAuth(app)
 twitter = oauth_conf.getTwitter(app)
 github = oauth_conf.getGithub(app)
 qq = oauth_conf.getQQ(app)
+facebook = oauth_conf.getFacebook(app)
+
+
+@facebook.tokengetter
+def get_facebook_oauth_token():
+    return cookie.get('oauth_token')
+
+
+@app.route('/api_facebook_oauthorized')
+def api_facebook_oauthorized():
+    resp = facebook.authorized_response()
+    if resp is None:
+        return 'Access denied: reason=%s error=%s' % (
+            request.args['error_reason'],
+            request.args['error_description']
+        )
+    if isinstance(resp, OAuthException):
+        return 'Access denied: %s' % resp.message
+
+    cookie['oauth_token'] = (resp['access_token'], '')
+    user = facebook.get('/me?fields=id,name,locale,email').data
+    oauth_info = dict(
+        out_id=user['id'],
+        type='facebook',
+        name=user['name'],
+        avatar='https://graph.facebook.com/%s/picture?height=250' % user['id'],
+        email=user.get('email'),
+        location=user['locale']
+    )
+    oauth_info, is_insert = oauth_bz.saveAndGetOauth(oauth_info)
+    cookie['user_id'] = str(oauth_info.id)
+    session.commit()
+    return redirect('/')
+
+
+@app.route('/api_facebook')
+def api_facebook():
+    callback = url_for(
+        'api_facebook_oauthorized',
+        next=request.args.get('next') or request.referrer or None,
+        _external=True
+    )
+    return facebook.authorize(callback=callback)
 
 
 @qq.tokengetter
@@ -381,7 +424,8 @@ def api_old():
     search_key = request.args.get('search_key')
     limit = request.args.get('limit', 10)
     user_id = cookie.get('user_id')
-    data = message_oper.getOld(user_id, before, limit, search_key, god_name, not_types)
+    data = message_oper.getOld(
+        user_id, before, limit, search_key, god_name, not_types)
     return jsonify(data)
 
 
