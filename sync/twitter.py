@@ -133,7 +133,7 @@ def saveMessage(god_name, twitter_name, god_id, tweet):
         name=twitter_name,
         out_id=tweet.id_str,
         m_type='twitter',
-        created_at=tweet.created_at,
+        out_created_at=tweet.created_at,
         content=None,
         text=tweet.text
     )
