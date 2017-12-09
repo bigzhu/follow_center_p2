@@ -120,14 +120,6 @@ def getNew(user_id, after, limit, search_key, god_name, not_types):
     data = dict(
         messages=messages, unread_message_count=unread_message_count)
 
-    if (len(messages) == 0):
-        if (user_id):
-            data['followed_god_count'] = session.query(FollowWho).filter(
-                FollowWho.user_id == user_id).count()
-            print(data['followed_god_count'])
-        else:
-            data['followed_god_count'] = 0
-
     return data
 
 

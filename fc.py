@@ -503,7 +503,15 @@ def api_new():
     limit = request.args.get('limit', 10)
     search_key = request.args.get('search_key', None)
     god_name = request.args.get('god_name', None)
-    data = message_oper.getNew(cookie.get('user_id'), after,
+    user_id = cookie.get('user_id')
+
+    if user_id is not None:
+        follow_count = follow_who_oper.getFollowCount(user_id)
+        if follow_count == 0:
+            follow_who_oper.followAll(user_id)
+            session.commit()
+
+    data = message_oper.getNew(user_id, after,
                                limit, search_key, god_name, not_types)
     return jsonify(data)
 
