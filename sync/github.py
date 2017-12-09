@@ -34,7 +34,8 @@ def getGithubUser(github_name, god_name):
         github_user = r.json()
         message = github_user.get('message')
         if message == 'Not Found':
-            god_oper.delNoName('github', god_name)
+            # god_oper.delNoName('github', god_name)
+            print('%s no exist: %s need del' % (github_name, message))
             return
         return github_user
     except requests.exceptions.ConnectionError:
@@ -76,7 +77,8 @@ def sync(god, wait):
         saveUser(god, github_user, etag)  # 为了update etag
     if r.status_code == 404:
         # public_db.sendDelApply('github', god_name, github_name, '404')
-        god_oper.delNoName('github', god_name)
+        # god_oper.delNoName('github', god_name)
+        print('%s no exist: %s need del' % (github_name, r.status_code))
 
 
 def saveMessage(god_name, github_name, god_id, message):
