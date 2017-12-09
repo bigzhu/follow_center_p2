@@ -26,6 +26,7 @@ from model import God
 import db_bz
 import model
 import url_bz
+import time_bz
 import follow_who_oper
 from sync import twitter as twitter_sync
 from sync import instagram as instagram_sync
@@ -468,6 +469,7 @@ def api_last():
         return jsonify('0')
 
     last = request.get_json().get('last')
+    last = time_bz.jsonToDatetime(last)
     last_oper.saveLast(user_id, last)
     session.commit()
 
