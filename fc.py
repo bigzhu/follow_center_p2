@@ -307,7 +307,7 @@ def api_social():
 
 @app.route('/api_god', methods=['GET', 'PUT', 'POST'])
 def api_god():
-    user_id = cookie['user_id']
+    user_id = cookie.get('user_id')
     if request.method == 'POST':
         data = request.get_json()
         name = data['name']
@@ -366,7 +366,9 @@ def api_sp(burl):
 def api_no_types():
 
     data = '0'
-    user_id = cookie['user_id']
+    user_id = cookie.get('user_id')
+    if user_id is None:
+        return jsonify(['github'])
     if request.method == 'PUT':
         no_types = request.get_json()
         if no_types:

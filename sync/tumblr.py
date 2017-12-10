@@ -37,7 +37,7 @@ def syncUserInfo(god):
         tumblr = dict(
             type='tumblr',
             name=god.tumblr['name'],
-            count=tumblr_user.get('likes', -1),  # 有人会不分享likes数
+            count=tumblr_user.get('likes', 1),  # 有人会不分享likes数
             avatar=tumblrRealAvatar(avatar_url),
             description=tumblr_user['description'],
             sync_key=tumblr_user['updated']

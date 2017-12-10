@@ -120,7 +120,7 @@ def saveUser(god, user, sync_key=None):
         sync_key=sync_key
     )
     if user.get('followers') is None:
-        github['count'] = -1
+        github['count'] = 1
     else:
         github['count'] = user['followers']
     if sync_key is not None:
