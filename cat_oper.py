@@ -23,6 +23,7 @@ def getCat(user_id, followed=False):
 
     sub_sql = god_oper.filterAllNullGod(q.subquery())
     sub_sql = god_oper.addGodFollowedCount(sub_sql)
+    print(sub_sql)
 
     data = session.query(
         func.count(sub_sql.c.cat).label('count'), sub_sql.c.cat).group_by(

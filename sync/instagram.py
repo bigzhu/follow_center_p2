@@ -143,7 +143,7 @@ def sync(god, wait):
 
     try:
         r = requests.get(url, headers=headers)
-    except requests.exceptions.SSLError:
+    except (requests.exceptions.SSLError, requests.exceptions.ChunkedEncodingError):
         error_info = exception_bz.getExpInfo()
         print(error_info)
         if ' Max retries exceeded with url' in error_info:  # 段时间内调用太多

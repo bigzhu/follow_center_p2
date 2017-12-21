@@ -21,6 +21,23 @@ class BzTest(model_bz.Base):
     user_id = Column(Text, nullable=False)
 
 
+class Gold(model_bz.Base):
+    '''
+    存放gold的配置
+    >>> Gold.__table__.create(checkfirst=True)
+    '''
+    __tablename__ = 'gold'
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    user_id = Column(Text)
+
+    oper = Column(Text, nullable=False)  # buy or sell
+    max = Column(Integer, nullable=False)  # top 和 low 最高值
+    atr = Column(Integer, nullable=False)  # 当天 12 点的 atr
+    last_reverse_max = Column(Integer, nullable=False)  # 上一天反向 max
+
+
 class MessageConf(model_bz.Base):
     '''
     对message的配置, 不显示哪些 social 等
@@ -186,14 +203,10 @@ def createNeed():
 
 
 if __name__ == '__main__':
-    from db_bz import session
-    d = session.query(BzTest).one()
-    print(d.created_at.isoformat())
-    print(d.updated_at.isoformat())
 
     # base = BzTest(id=1, user_id=1)
     # session.add(base)
     # session.commit()
 
-    # import doctest
-    # doctest.testmod(verbose=False, optionflags=doctest.ELLIPSIS)
+    import doctest
+    doctest.testmod(verbose=False, optionflags=doctest.ELLIPSIS)
