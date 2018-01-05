@@ -16,20 +16,28 @@ def trade(oper, max, atr, last_reverse_max):
     else:
         reverse = max + two_atr
         stop = last_reverse_max + one_quarter
-    result = dict(reverse=reverse / 1000)
     intervals = []
     tmp = max
     while True:
-        # for i in range(1, 14):
+        data = {}
+        need_lose = True
         if oper == 'buy':
             tmp = tmp - one_quarter
             if tmp <= stop:
+                need_lose = False
+            if tmp < reverse:
                 break
         else:
             tmp = tmp + one_quarter
             if tmp >= stop:
+                need_lose = False
+            if tmp > reverse:
                 break
-        intervals.append(tmp / 1000)
+        data['in_at'] = tmp / 1000
+        if need_lose:
+            data['may_lose'] = abs(tmp - stop) / 10 * 0.5 + 4
+        intervals.append(data)
+    result = dict(reverse=reverse / 1000)
     result['intervals'] = intervals
     result['stop'] = stop / 1000
     return result
