@@ -13,9 +13,20 @@ def trade(oper, max, atr, last_reverse_max):
     if oper == 'buy':
         reverse = max - two_atr
         stop = last_reverse_max - one_quarter
+        # 选择 stop 和 reverse 较为接近 max 的做 may_lose 判断
+        if reverse > stop:
+            real_stop = reverse
+        else:
+            real_stop = stop
     else:
+        if reverse < stop:
+            real_stop = reverse
+        else:
+            real_stop = stop
+
         reverse = max + two_atr
         stop = last_reverse_max + one_quarter
+
     intervals = []
     tmp = max
     while True:
@@ -35,7 +46,7 @@ def trade(oper, max, atr, last_reverse_max):
                 break
         data['in_at'] = tmp / 1000
         if need_lose:
-            data['may_lose'] = abs(tmp - stop) / 10 * 0.5 + 4
+            data['may_lose'] = abs(tmp - real_stop) / 10 * 0.5 + 4
         intervals.append(data)
     result = dict(reverse=reverse / 1000)
     result['intervals'] = intervals
