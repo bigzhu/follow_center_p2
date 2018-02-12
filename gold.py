@@ -19,13 +19,13 @@ def trade(oper, max, atr, last_reverse_max):
         else:
             real_stop = stop
     else:
+        reverse = max + two_atr
+        stop = last_reverse_max + one_quarter
+
         if reverse < stop:
             real_stop = reverse
         else:
             real_stop = stop
-
-        reverse = max + two_atr
-        stop = last_reverse_max + one_quarter
 
     intervals = []
     tmp = max

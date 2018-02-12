@@ -54,10 +54,22 @@ facebook = oauth_conf.getFacebook(app)
 from gold import trade
 
 
+@app.route('/api_test', methods=['POST'])
+def api_test():
+    '''
+    the gold
+    '''
+    if request.method == 'POST':
+        data = request.get_json()
+        print(data)
+        return jsonify({"result": "Success"})
+
+
 @app.route('/api_gold')
 def api_gold():
     gold_conf = session.query(model.Gold).one_or_none()
-    result = trade(gold_conf.oper, gold_conf.max, gold_conf.atr, gold_conf.last_reverse_max)
+    result = trade(gold_conf.oper, gold_conf.max,
+                   gold_conf.atr, gold_conf.last_reverse_max)
     return jsonify(result)
 
 
