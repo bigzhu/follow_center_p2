@@ -65,18 +65,20 @@ def api_test():
         return jsonify({"result": "Success"})
 
 
-@app.route('/api_gold')
-def api_gold():
-    gold_conf = session.query(model.Gold).one_or_none()
+@app.route('/api_trade')
+def api_trade():
+    type = request.args.get('type', None)
+    gold_conf = session.query(model.Gold).filter(model.Gold.type == type).one_or_none()
+    print(gold_conf)
     result = trade(gold_conf.oper, gold_conf.max,
                    gold_conf.atr, gold_conf.last_reverse_max)
     return jsonify(result)
 
 
-@app.route('/api_gold_conf', methods=['GET', 'POST'])
-def api_gold_conf():
+@app.route('/api_trade_conf', methods=['GET', 'POST'])
+def api_trade_conf():
     '''
-    the gold
+    期货跟踪
     '''
     user_id = cookie['user_id']
     if request.method == 'POST':
@@ -90,7 +92,8 @@ def api_gold_conf():
         session.commit()
         return jsonify("0")
     if request.method == 'GET':
-        gold_conf = session.query(model.Gold).one_or_none()
+        type = request.args.get('type', None)
+        gold_conf = session.query(model.Gold).filter(model.Gold.type == type).one_or_none()
         if gold_conf is not None:
             gold_conf.max = gold_conf.max / 1000
             gold_conf.atr = gold_conf.atr / 1000
