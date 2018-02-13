@@ -88,12 +88,13 @@ def api_trade_conf():
         data['max'] = data['max'] * 1000
         data['atr'] = data['atr'] * 1000
         data['last_reverse_max'] = data['last_reverse_max'] * 1000
-        db_bz.updateOrInsert(model.Gold, data)
+        db_bz.updateOrInsert(model.Gold, data, type=data['type'])
         session.commit()
         return jsonify("0")
     if request.method == 'GET':
         type = request.args.get('type', None)
         gold_conf = session.query(model.Gold).filter(model.Gold.type == type).one_or_none()
+        print(session.query(model.Gold).filter(model.Gold.type == type))
         if gold_conf is not None:
             gold_conf.max = gold_conf.max / 1000
             gold_conf.atr = gold_conf.atr / 1000
