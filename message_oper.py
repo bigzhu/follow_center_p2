@@ -114,8 +114,11 @@ def getNew(user_id, after, limit, search_key, god_name, not_types):
             # 查出还有多少未读
             unread_message_count = getUnreadCount(user_id, after)
 
-    messages = session.query(sub_sql).order_by(
-        sub_sql.c.out_created_at).limit(limit).all()
+    sub_sql = session.query(sub_sql).order_by(
+        sub_sql.c.out_created_at).limit(limit)
+    print(sub_sql)
+    messages = sub_sql.all()
+
     messages = [r._asdict() for r in messages]
     data = dict(
         messages=messages, unread_message_count=unread_message_count)

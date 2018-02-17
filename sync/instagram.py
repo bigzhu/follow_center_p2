@@ -150,6 +150,8 @@ def sync(god, wait):
             print('Max retries exceeded, sleep 600')
             time.sleep(600)
             sync(god, wait=True)
+        else:
+            return
 
     if r.status_code == 200:
         etag = r.headers.get('etag')

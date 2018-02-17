@@ -68,7 +68,8 @@ def api_test():
 @app.route('/api_trade')
 def api_trade():
     type = request.args.get('type', None)
-    gold_conf = session.query(model.Gold).filter(model.Gold.type == type).one_or_none()
+    gold_conf = session.query(model.Gold).filter(
+        model.Gold.type == type).one_or_none()
     print(gold_conf)
     result = trade(gold_conf.oper, gold_conf.max,
                    gold_conf.atr, gold_conf.last_reverse_max)
@@ -93,7 +94,8 @@ def api_trade_conf():
         return jsonify("0")
     if request.method == 'GET':
         type = request.args.get('type', None)
-        gold_conf = session.query(model.Gold).filter(model.Gold.type == type).one_or_none()
+        gold_conf = session.query(model.Gold).filter(
+            model.Gold.type == type).one_or_none()
         print(session.query(model.Gold).filter(model.Gold.type == type))
         if gold_conf is not None:
             gold_conf.max = gold_conf.max / 1000
@@ -464,10 +466,15 @@ def api_login():
     # password = data['password']
     oauth_info = oauth_bz.getOauthInfo(None, user_name, 'github')
 
-    cookie.permanent = True
+    # cookie.permanent = True
     cookie['user_id'] = str(oauth_info.id)
 
     return jsonify("0")
+
+
+@app.before_request
+def make_session_permanent():
+    cookie.permanent = True
 
 
 @app.route('/api_old')
