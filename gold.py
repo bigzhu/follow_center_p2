@@ -2,55 +2,115 @@
 # -*- coding: utf-8 -*-
 
 
-def trade(oper, max, atr, last_reverse_max):
+def getBuyReverse(max, atr):
+    '''
+    获取买入的反转点
+    最高点两倍 atr 肯定要反转
+    '''
+    reverse = max - atr * 2
+    return reverse
+
+
+def getBuyStop(four_reverse_max, unit, reverse):
+    '''
+    止损点
+    突破近4天最低点一个单位, 则止损
+    如果反转点更高, 那么用反转点止损
+    '''
+    stop = four_reverse_max - unit
+    if reverse > stop:
+        return reverse
+    else:
+        return stop
+
+
+def getSellReverse(max, atr):
+    '''
+    获取卖出的反转点
+    '''
+    reverse = max + atr * 2
+    return reverse
+
+
+def getSellStop(four_reverse_max, unit, reverse):
+    '''
+    获取卖出的止损点
+    '''
+    stop = four_reverse_max + unit
+    if reverse < stop:
+        return reverse
+    else:
+        return stop
+
+
+def getBuyStepAndLose(max, unit, stop, reverse):
+    '''
+    计算买入点和可能的损失
+    '''
+    intervals = []
+    tmp = max
+    amount = 1
+    while True:
+        data = {}
+        tmp -= unit
+        if tmp <= reverse:
+            break
+        # 购买量
+        data['amount'] = (amount) / 10
+        # 入场点
+        data['in'] = tmp / 1000
+        # 可能损失
+        data['lose'] = (abs(tmp - stop) * amount) / 100 + 4
+        amount += 1
+        intervals.append(data)
+    return intervals
+
+
+def getSellStepAndLose(max, unit, stop, reverse):
+    '''
+    计算卖出点和可能的损失
+    >>> stop = getSellStop()
+    >>> getSellStepAndLose(1312830, 14760/4,  )
+    '''
+    intervals = []
+    tmp = max
+    amount = 1
+    while True:
+        data = {}
+        tmp += unit
+        if tmp >= reverse:
+            break
+        # 购买量
+        data['amount'] = (amount) / 10
+        # 入场点
+        data['in'] = tmp / 1000
+        # 可能损失
+        data['lose'] = (abs(tmp - stop) * amount) / 100 + 4
+        amount += 1
+        intervals.append(data)
+    return intervals
+
+
+def trade(oper, max, atr, four_reverse_max):
     '''
     计算购入点
     >>> trade('buy', 1296940, 9800)
     {'reverse': 1277.34, 'intervals': [1294.49, 1292.04, 1289.59, 1287.14, 1284.69, 1282.24, 1279.79, 1277.34, 1274.89, 1272.44, 1269.99, 1267.54, 1265.09]}
     '''
-    two_atr = 2 * atr
-    one_quarter = atr / 4
+    unit = atr / 4
     if oper == 'buy':
-        reverse = max - two_atr
-        stop = last_reverse_max - one_quarter
-        # 选择 stop 和 reverse 较为接近 max 的做 may_lose 判断
-        if reverse > stop:
-            real_stop = reverse
-        else:
-            real_stop = stop
+        reverse = getBuyReverse(max, atr)
+        stop = getBuyStop(four_reverse_max, unit, reverse)
+        intervals = getBuyStepAndLose(max, unit, stop, reverse)
     else:
-        reverse = max + two_atr
-        stop = last_reverse_max + one_quarter
+        reverse = getSellReverse(max, atr)
+        stop = getSellStop(four_reverse_max, unit, reverse)
+        intervals = getSellStepAndLose(max, unit, stop, reverse)
 
-        if reverse < stop:
-            real_stop = reverse
-        else:
-            real_stop = stop
-
-    intervals = []
-    tmp = max
-    while True:
-        data = {}
-        need_lose = True
-        if oper == 'buy':
-            tmp = tmp - one_quarter
-            if tmp <= stop:
-                need_lose = False
-            if tmp < reverse:
-                break
-        else:
-            tmp = tmp + one_quarter
-            if tmp >= stop:
-                need_lose = False
-            if tmp > reverse:
-                break
-        data['in_at'] = tmp / 1000
-        if need_lose:
-            data['may_lose'] = abs(tmp - real_stop) / 10 * 0.5 + 4
-        intervals.append(data)
     result = dict(reverse=reverse / 1000)
     result['intervals'] = intervals
     result['stop'] = stop / 1000
+    result['reverse'] = reverse / 1000
     return result
 
 
