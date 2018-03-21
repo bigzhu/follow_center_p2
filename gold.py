@@ -43,7 +43,7 @@ def getSellStop(four_reverse_max, unit, reverse):
         return stop
 
 
-def getBuyStepAndLose(max, unit, stop, reverse):
+def getBuyStepAndLose(max, unit, stop, reverse, week_atr):
     '''
     计算买入点和可能的损失
     '''
@@ -59,14 +59,17 @@ def getBuyStepAndLose(max, unit, stop, reverse):
         data['amount'] = (amount) / 10
         # 入场点
         data['in'] = tmp / 1000
+        # 出场点
+        data['out'] = (tmp + week_atr) / 1000
         # 可能损失
-        data['lose'] = (abs(tmp - stop) * amount) / 100 + 4
+        if tmp > stop:  # 超过止损的没必要计算可能损失了
+            data['lose'] = (abs(tmp - stop) * amount) / 100 + 4
         amount += 1
         intervals.append(data)
     return intervals
 
 
-def getSellStepAndLose(max, unit, stop, reverse):
+def getSellStepAndLose(max, unit, stop, reverse, week_atr):
     '''
     计算卖出点和可能的损失
     >>> stop = getSellStop()
@@ -84,14 +87,17 @@ def getSellStepAndLose(max, unit, stop, reverse):
         data['amount'] = (amount) / 10
         # 入场点
         data['in'] = tmp / 1000
+        # 出场点
+        data['out'] = (tmp - week_atr) / 1000
         # 可能损失
-        data['lose'] = (abs(tmp - stop) * amount) / 100 + 4
+        if tmp < stop:  # 超过止损的没必要计算可能损失了
+            data['lose'] = (abs(tmp - stop) * amount) / 100 + 4
         amount += 1
         intervals.append(data)
     return intervals
 
 
-def trade(oper, max, atr, four_reverse_max):
+def trade(oper, max, atr, four_reverse_max, week_atr):
     '''
     计算购入点
     >>> trade('buy', 1296940, 9800)
@@ -101,16 +107,27 @@ def trade(oper, max, atr, four_reverse_max):
     if oper == 'buy':
         reverse = getBuyReverse(max, atr)
         stop = getBuyStop(four_reverse_max, unit, reverse)
-        intervals = getBuyStepAndLose(max, unit, stop, reverse)
+        intervals = getBuyStepAndLose(max, unit, stop, reverse, week_atr)
+        out1 = four_reverse_max + atr + unit
+        out2 = four_reverse_max + 20000
+        out3 = four_reverse_max + week_atr
     else:
         reverse = getSellReverse(max, atr)
         stop = getSellStop(four_reverse_max, unit, reverse)
-        intervals = getSellStepAndLose(max, unit, stop, reverse)
+        intervals = getSellStepAndLose(max, unit, stop, reverse, week_atr)
+        out1 = four_reverse_max - atr - unit
+        out2 = four_reverse_max - 20000
+        out3 = four_reverse_max - week_atr
 
     result = dict(reverse=reverse / 1000)
     result['intervals'] = intervals
     result['stop'] = stop / 1000
     result['reverse'] = reverse / 1000
+
+    result['out1'] = out1 / 1000
+    result['out2'] = out2 / 1000
+    result['out3'] = out3 / 1000
+
     return result
 
 

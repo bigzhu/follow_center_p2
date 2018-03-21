@@ -72,7 +72,7 @@ def api_trade():
         model.Gold.type == type).one_or_none()
     print(gold_conf)
     result = trade(gold_conf.oper, gold_conf.max,
-                   gold_conf.atr, gold_conf.last_reverse_max)
+                   gold_conf.atr, gold_conf.last_reverse_max, gold_conf.week_atr)
     return jsonify(result)
 
 
@@ -88,6 +88,7 @@ def api_trade_conf():
         data['updated_at'] = datetime.datetime.utcnow()
         data['max'] = data['max'] * 1000
         data['atr'] = data['atr'] * 1000
+        data['week_atr'] = data['week_atr'] * 1000
         data['last_reverse_max'] = data['last_reverse_max'] * 1000
         db_bz.updateOrInsert(model.Gold, data, type=data['type'])
         session.commit()
@@ -100,6 +101,7 @@ def api_trade_conf():
         if gold_conf is not None:
             gold_conf.max = gold_conf.max / 1000
             gold_conf.atr = gold_conf.atr / 1000
+            gold_conf.week_atr = gold_conf.week_atr / 1000
             gold_conf.last_reverse_max = gold_conf.last_reverse_max / 1000
         return jsonify(gold_conf)
 

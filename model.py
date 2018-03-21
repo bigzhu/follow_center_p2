@@ -37,6 +37,7 @@ class Gold(model_bz.Base):
     atr = Column(Integer, nullable=False)  # 当天 12 点的 atr
     last_reverse_max = Column(Integer, nullable=False)  # 上一天反向 max
     type = Column(Text, nullable=False)  # 支持多种类型, gold silver
+    week_atr = Column(Integer, nullable=False)  # 周 atr
 
 
 class MessageConf(model_bz.Base):

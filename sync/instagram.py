@@ -165,7 +165,11 @@ def sync(god, wait):
                 content = content.replace('window._sharedData =', '')
                 content = content.replace(';', '')
                 content = json.loads(content)
-                user = content['entry_data']['ProfilePage'][0]['user']
+                user = content['entry_data']['ProfilePage'][0].get('user')
+                if user is None:
+                    print("can't get user: %s" %
+                          content['entry_data']['ProfilePage'][0])
+                    return
 
                 saveUser(god, user, etag)
                 if user['media'].get('nodes'):
