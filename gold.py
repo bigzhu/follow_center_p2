@@ -43,7 +43,7 @@ def getSellStop(four_reverse_max, unit, reverse):
         return stop
 
 
-def getBuyStepAndLose(max, unit, stop, reverse, week_atr):
+def getBuyStepAndLose(max, unit, stop, reverse, week_atr, out1):
     '''
     计算买入点和可能的损失
     '''
@@ -62,14 +62,16 @@ def getBuyStepAndLose(max, unit, stop, reverse, week_atr):
         # 出场点
         data['out'] = (tmp + week_atr) / 1000
         # 可能损失
-        if tmp > stop:  # 超过止损的没必要计算可能损失了
+        # 超过止损的没必要计算可能损失了
+        # 价格比一级出场点的也不要买了
+        if tmp > stop and tmp < out1:
             data['lose'] = (abs(tmp - stop) * amount) / 100 + 4
         amount += 1
         intervals.append(data)
     return intervals
 
 
-def getSellStepAndLose(max, unit, stop, reverse, week_atr):
+def getSellStepAndLose(max, unit, stop, reverse, week_atr, out1):
     '''
     计算卖出点和可能的损失
     >>> stop = getSellStop()
@@ -90,7 +92,9 @@ def getSellStepAndLose(max, unit, stop, reverse, week_atr):
         # 出场点
         data['out'] = (tmp - week_atr) / 1000
         # 可能损失
-        if tmp < stop:  # 超过止损的没必要计算可能损失了
+        # 超过止损的没必要计算可能损失了
+        # 比一级出场点还高, 没必要卖在这个点
+        if tmp < stop and tmp > out1:
             data['lose'] = (abs(tmp - stop) * amount) / 100 + 4
         amount += 1
         intervals.append(data)
@@ -105,12 +109,14 @@ def trade(oper, max, atr, four_reverse_max, week_atr):
     '''
     unit = atr / 4
     if oper == 'buy':
-        reverse = getBuyReverse(max, atr)
-        stop = getBuyStop(four_reverse_max, unit, reverse)
-        intervals = getBuyStepAndLose(max, unit, stop, reverse, week_atr)
         out1 = four_reverse_max + atr + unit
         out2 = four_reverse_max + 20000
         out3 = four_reverse_max + week_atr
+
+        reverse = getBuyReverse(max, atr)
+        stop = getBuyStop(four_reverse_max, unit, reverse)
+        intervals = getBuyStepAndLose(max, unit, stop, reverse, week_atr, out1)
+
     else:
         reverse = getSellReverse(max, atr)
         stop = getSellStop(four_reverse_max, unit, reverse)
