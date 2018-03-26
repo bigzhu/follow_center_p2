@@ -101,6 +101,24 @@ def getSellStepAndLose(max, unit, stop, reverse, week_atr, out1):
     return intervals
 
 
+def getBuyOuts(four_reverse_max, atr, week_atr, unit):
+    out1 = four_reverse_max + atr + unit
+    out2 = four_reverse_max + 20000
+    out3 = four_reverse_max + week_atr
+    if out1 > out2:
+        out1, out2 = out2, out1
+    return out1, out2, out3
+
+
+def getSellOuts(four_reverse_max, atr, week_atr, unit):
+    out1 = four_reverse_max - atr - unit
+    out2 = four_reverse_max - 20000
+    out3 = four_reverse_max - week_atr
+    if out1 < out2:
+        out1, out2 = out2, out1
+    return out1, out2, out3
+
+
 def trade(oper, max, atr, four_reverse_max, week_atr):
     '''
     计算购入点
@@ -109,21 +127,20 @@ def trade(oper, max, atr, four_reverse_max, week_atr):
     '''
     unit = atr / 4
     if oper == 'buy':
-        out1 = four_reverse_max + atr + unit
-        out2 = four_reverse_max + 20000
-        out3 = four_reverse_max + week_atr
+        out1, out2, out3 = getBuyOuts(four_reverse_max, atr, week_atr, unit)
 
         reverse = getBuyReverse(max, atr)
         stop = getBuyStop(four_reverse_max, unit, reverse)
         intervals = getBuyStepAndLose(max, unit, stop, reverse, week_atr, out1)
 
     else:
+
+        out1, out2, out3 = getSellOuts(four_reverse_max, atr, week_atr, unit)
+
         reverse = getSellReverse(max, atr)
         stop = getSellStop(four_reverse_max, unit, reverse)
-        intervals = getSellStepAndLose(max, unit, stop, reverse, week_atr)
-        out1 = four_reverse_max - atr - unit
-        out2 = four_reverse_max - 20000
-        out3 = four_reverse_max - week_atr
+        intervals = getSellStepAndLose(
+            max, unit, stop, reverse, week_atr, out1)
 
     result = dict(reverse=reverse / 1000)
     result['intervals'] = intervals
