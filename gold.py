@@ -102,20 +102,25 @@ def getSellStepAndLose(max, unit, stop, reverse, week_atr, out1):
 
 
 def getBuyOuts(four_reverse_max, atr, week_atr, unit):
-    out1 = four_reverse_max + atr + unit
-    out2 = four_reverse_max + 20000
-    out3 = four_reverse_max + week_atr
+    out1 = four_reverse_max + atr + unit  # 最低点+atr+unit
+    out2 = four_reverse_max + 2 * atr  # 最低点加两倍atr
+    out3 = four_reverse_max + week_atr  # 最低点加周波动
     if out1 > out2:
         out1, out2 = out2, out1
+    if out2 > out3:
+        out2, out3 = out3, out2
+
     return out1, out2, out3
 
 
 def getSellOuts(four_reverse_max, atr, week_atr, unit):
     out1 = four_reverse_max - atr - unit
-    out2 = four_reverse_max - 20000
+    out2 = four_reverse_max - 2 * atr
     out3 = four_reverse_max - week_atr
     if out1 < out2:
         out1, out2 = out2, out1
+    if out2 < out3:
+        out2, out3 = out3, out2
     return out1, out2, out3
 
 

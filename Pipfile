@@ -21,6 +21,8 @@ flask = "*"
 python-dateutil = "*"
 flask-oauth = "*"
 flask-oauthlib = "*"
+"beautifulsoup4" = "*"
+dateutils = "*"
 
 
 [pipenv]

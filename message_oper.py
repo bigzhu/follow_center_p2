@@ -15,8 +15,20 @@ from model import God
 from model import FollowWho
 from sqlalchemy import or_
 from sqlalchemy import desc
+from model import Message
 
 all_message = db_bz.getReflect('all_message')
+
+
+def getByID(user_id, id):
+    sub_sql = session.query(all_message).filter(
+        all_message.c.id == id).subquery()
+    print(sub_sql)
+    if user_id:
+        sub_sql = addCollectInfo(sub_sql, user_id)
+        sub_sql = addAnkiInfo(sub_sql, user_id)
+    message = session.query(sub_sql).one_or_none()
+    return message._asdict()
 
 
 def getOld(user_id, before, limit, search_key, god_name, not_types):
@@ -116,7 +128,7 @@ def getNew(user_id, after, limit, search_key, god_name, not_types):
 
     sub_sql = session.query(sub_sql).order_by(
         sub_sql.c.out_created_at).limit(limit)
-    print(sub_sql)
+    # print(sub_sql)
     messages = sub_sql.all()
 
     messages = [r._asdict() for r in messages]
@@ -192,6 +204,18 @@ def getUnreadCount(user_id, after):
     return unread_message_count
 
 
+def getNotUploadImageMessagesByMType(m_type):
+    '''
+    取出没有上载过的 image message
+    '''
+    messages = session.query(Message).filter(
+        or_(Message.type == 'image', Message.type == 'images')
+    ).filter(Message.m_type == m_type).filter(Message.images.is_(None)).limit(50).all()
+    return messages
+
+
 if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False, optionflags=doctest.ELLIPSIS)
+    for i in getNotUploadImageMessagesByMType('instagram'):
+        print(i.type)
+    #import doctest
+    #doctest.testmod(verbose=False, optionflags=doctest.ELLIPSIS)

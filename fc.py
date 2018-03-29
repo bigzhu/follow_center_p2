@@ -54,6 +54,15 @@ facebook = oauth_conf.getFacebook(app)
 from gold import trade
 
 
+@app.route('/api_message', methods=['GET'])
+def api_message():
+    user_id = cookie['user_id']
+    if request.method == 'GET':
+        id = request.args.get('id', None)
+        data = message_oper.getByID(user_id, id)
+        return jsonify(data)
+
+
 @app.route('/api_test', methods=['POST'])
 def api_test():
     '''

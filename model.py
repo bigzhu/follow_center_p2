@@ -147,6 +147,7 @@ class Message(model_bz.Base):
     extended_entities = Column(JSONB)  # 扩展内容,图片什么
     href = Column(Text)  # message 的link
     type = Column(Text)  # media type
+    images = Column(JSONB)  # 存储上传图床后的images地址
 
 
 class Collect(model_bz.Base):
