@@ -23,7 +23,6 @@ def uploadImgByURL(url):
                      headers=headers, data=payload)
     result = r.json()
     if result['status'] == 'error':
-        print(url)
         print(result['error'])
         return 'error'
     else:
@@ -57,8 +56,31 @@ def updateInstagram():
             url = i.extended_entities['url']
             url = main(url)
             i.images = [url]
+            session.commit()
             print(url)
-    session.commit()
+        if i.type == 'images':
+            i.images = []
+            for v in i.extended_entities:
+                url = main(v['url'])
+                # 其中一个出错, 其他也不用试了
+                if url == "error":
+                    i.images = [url]
+                    break
+                else:
+                    i.images.append(url)
+            print(i.images)
+            session.commit()
+
+
+def updateTwitter():
+    ins = message_oper.getNotUploadImageMessagesByMType('twitter')
+    for i in ins:
+        if i.type == 'image':
+            url = i.extended_entities['url']
+            url = main(url)
+            i.images = [url]
+            session.commit()
+            print(url)
 
 
 if __name__ == '__main__':
