@@ -23,6 +23,7 @@ flask-oauth = "*"
 flask-oauthlib = "*"
 "beautifulsoup4" = "*"
 dateutils = "*"
+"psycopg2-binary" = "*"
 
 
 [pipenv]

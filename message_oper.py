@@ -209,7 +209,7 @@ def getNotUploadImageMessagesByMType(m_type):
     取出没有上载过的 image message
     '''
     messages = session.query(Message).filter(
-        or_(Message.type == 'image', Message.type == 'images')
+        or_(Message.type == 'image', Message.type == 'images', Message.type == 'photo')
     ).filter(Message.m_type == m_type).filter(Message.images.is_(None)).all()
     return messages
 
