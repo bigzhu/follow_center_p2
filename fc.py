@@ -32,7 +32,7 @@ from sync import twitter as twitter_sync
 from sync import instagram as instagram_sync
 from sync import tumblr as tumblr_sync
 from sync import github as github_sync
-# import exception_bz
+import exception_bz
 import collect_oper
 import oauth_conf
 from flask_oauthlib.client import OAuth, OAuthException
@@ -52,6 +52,12 @@ qq = oauth_conf.getQQ(app)
 facebook = oauth_conf.getFacebook(app)
 
 from gold import trade
+
+
+#@api.errorhandler
+# def default_error_handler(error):
+#    '''Default error handler'''
+#    return {'error_info': str(error)}, getattr(error, 'code', 500)
 
 
 @app.route('/api_message', methods=['GET'])
@@ -473,6 +479,7 @@ def api_logout():
 def api_login():
 
     data = request.get_json()
+    print(data)
     user_name = data['user_name']
     # password = data['password']
     oauth_info = oauth_bz.getOauthInfo(None, user_name, 'github')
@@ -594,9 +601,9 @@ def shutdown_session(exception=None):
     session.remove()
 
 
-# @app.errorhandler(Exception)
-# def all_exception_handler(error):
-#     return exception_bz.getExpInfoAll(True)
+@app.errorhandler(Exception)
+def all_exception_handler(error):
+    return exception_bz.getExpInfoAll(True), 500
 
 
 if __name__ == '__main__':

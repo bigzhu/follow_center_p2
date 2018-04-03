@@ -78,9 +78,8 @@ def updateTwitter():
         if i.type == 'photo':
             i.images = []
             for v in i.extended_entities['media']:
-                print(v)
                 url = v['media_url_https'] + ':orig'
-                url = main(v['url'])
+                url = main(url)
                 # 其中一个出错, 其他也不用试了
                 if url == "error":
                     i.images = [url]
