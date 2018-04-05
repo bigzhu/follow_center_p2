@@ -17,6 +17,7 @@ import tweepy
 import exception_bz
 from model import Message
 import configparser
+import upload_image
 config = configparser.ConfigParser()
 with open('./conf/twitter.ini', 'r') as cfg_file:
     config.readfp(cfg_file)
@@ -146,6 +147,8 @@ def saveMessage(god_name, twitter_name, god_id, tweet):
         Message, m, out_id=tweet.id_str, m_type='twitter')
     if insert:
         print('%s new twitter %s' % (m['name'], m['out_id']))
+        # 上传图片到图床中
+        upload_image.uploadTwitter()
     return id
 
 

@@ -12,6 +12,7 @@ sys.path.append("../")
 # import god_oper
 import sys
 import datetime
+import upload_image
 import time_bz
 import requests
 requests.adapters.DEFAULT_RETRIES = 5
@@ -241,6 +242,8 @@ def saveMessage(ins_name, user_name, god_id, message):
         Message, m, out_id=message['id'], m_type='instagram')
     if insert:
         print('%s new instagram %s' % (m['name'], m['out_id']))
+        # 上传图片到图床中
+        upload_image.uploadInstagram()
 
 
 def main():

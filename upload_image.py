@@ -49,7 +49,7 @@ def main(url):
     return getOrginImgURL(url)
 
 
-def updateInstagram():
+def uploadInstagram():
     ins = message_oper.getNotUploadImageMessagesByMType('instagram')
     for i in ins:
         if i.type == 'image':
@@ -72,7 +72,7 @@ def updateInstagram():
             session.commit()
 
 
-def updateTwitter():
+def uploadTwitter():
     ins = message_oper.getNotUploadImageMessagesByMType('twitter')
     for i in ins:
         if i.type == 'photo':
@@ -91,6 +91,6 @@ def updateTwitter():
 
 
 if __name__ == '__main__':
-    updateTwitter()
+    uploadTwitter()
     #import doctest
     #doctest.testmod(verbose=False, optionflags=doctest.ELLIPSIS)
