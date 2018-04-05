@@ -166,16 +166,16 @@ def sync(god, wait):
                 content = content.replace('window._sharedData =', '')
                 content = content.replace(';', '')
                 content = json.loads(content)
-                user = content['entry_data']['ProfilePage'][0].get('user')
+                user = content['entry_data']['ProfilePage'][0]['graphql'].get('user')
                 if user is None:
                     print("can't get user: %s" %
-                          content['entry_data']['ProfilePage'][0])
+                          json.dumps(content['entry_data']['ProfilePage'][0]))
                     return
 
                 saveUser(god, user, etag)
-                if user['media'].get('nodes'):
-                    for message in user['media']['nodes']:
-                        saveMessage(ins_name, god_name, god.id, message)
+                if user['edge_owner_to_timeline_media'].get('edges'):
+                    for message in user['edge_owner_to_timeline_media']['edges']:
+                        saveMessage(ins_name, god_name, god.id, message['node'])
     elif r.status_code == 304:
         pass
     elif r.status_code == 404:
@@ -192,7 +192,7 @@ def saveUser(god, user, sync_key):
     instagram = dict(
         type='instagram',
         name=ins_name,
-        count=user['followed_by']['count'],
+        count=user['edge_followed_by']['count'],
         avatar=user['profile_pic_url'],
         description=user['biography'],
         id=user['id'],
@@ -212,16 +212,16 @@ def saveMessage(ins_name, user_name, god_id, message):
         name=ins_name,
         m_type='instagram',
         out_id=message['id'],
-        out_created_at=time_bz.timestampToDateTime(message['date'])
+        out_created_at=time_bz.timestampToDateTime(message['taken_at_timestamp'])
     )
-    if message.get('caption'):
-        m['text'] = message['caption']
+    if len(message['edge_media_to_caption']['edges']) > 0:
+        m['text'] = message['edge_media_to_caption']['edges'][0]['node']['text']
     else:
         m['text'] = None
-    m['extended_entities'] = {'url': message['display_src']}
-    m['href'] = 'https://www.instagram.com/p/%s/' % message['code']
+    m['extended_entities'] = {'url': message['display_url']}
+    m['href'] = 'https://www.instagram.com/p/%s/' % message['shortcode']
     if message['__typename'] == 'GraphSidecar':  # mutiple image
-        edges = getMutipleImage(message['code'])
+        edges = getMutipleImage(message['shortcode'])
         if not edges:
             return
         images = []
@@ -234,7 +234,7 @@ def saveMessage(ins_name, user_name, god_id, message):
         m['type'] = 'video'
         video_url = getVideoUrl(m['href'])
         m['extended_entities'] = {
-            'url': message['display_src'], 'video_url': video_url}
+            'url': message['display_url'], 'video_url': video_url}
     else:
         m['type'] = 'image'
 
