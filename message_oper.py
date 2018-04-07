@@ -127,8 +127,8 @@ def getNew(user_id, after, limit, search_key, god_name, not_types):
             unread_message_count = getUnreadCount(user_id, after)
 
     sub_sql = session.query(sub_sql).order_by(
-        sub_sql.c.out_created_at).limit(limit)
-    # print(sub_sql)
+        sub_sql.c.out_created_at.desc()).limit(limit)
+    print(sub_sql)
     messages = sub_sql.all()
 
     messages = [r._asdict() for r in messages]
