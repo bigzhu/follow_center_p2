@@ -11,7 +11,7 @@ from flask import redirect
 from flask import url_for
 from flask import flash
 
-from flask_bz import ExtEncoder
+# from flask_bz import ExtEncoder
 from flask import session as cookie
 import message_oper
 import oauth_bz
@@ -38,9 +38,25 @@ import oauth_conf
 from flask_oauthlib.client import OAuth, OAuthException
 import datetime
 
+from flask.json import JSONEncoder
+
+
+class CustomJSONEncoder(JSONEncoder):
+
+    def default(self, obj):
+        try:
+            if isinstance(obj, datetime):
+                return time_bz.datetimeTOJson(obj)
+            iterable = iter(obj)
+        except TypeError:
+            pass
+        else:
+            return list(iterable)
+        return JSONEncoder.default(self, obj)
+
 
 app = Flask(__name__)
-app.json_encoder = ExtEncoder
+app.json_encoder = CustomJSONEncoder
 app.secret_key = conf.cookie_secret
 # js 需要访问 cookies
 app.config['SESSION_COOKIE_HTTPONLY'] = False
