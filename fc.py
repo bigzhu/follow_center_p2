@@ -11,7 +11,7 @@ from flask import redirect
 from flask import url_for
 from flask import flash
 
-# from flask_bz import ExtEncoder
+from flask_bz import ExtEncoder
 from flask import session as cookie
 import message_oper
 import oauth_bz
@@ -38,10 +38,10 @@ import oauth_conf
 from flask_oauthlib.client import OAuth, OAuthException
 import datetime
 
-from flask.json import JSONEncoder
+# from flask.json import JSONEncoder
 
 
-class CustomJSONEncoder(JSONEncoder):
+class CustomJSONEncoder(ExtEncoder):
 
     def default(self, obj):
         try:
@@ -52,7 +52,7 @@ class CustomJSONEncoder(JSONEncoder):
             pass
         else:
             return list(iterable)
-        return JSONEncoder.default(self, obj)
+        return ExtEncoder.default(self, obj)
 
 
 app = Flask(__name__)
