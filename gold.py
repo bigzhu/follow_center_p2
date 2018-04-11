@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# 点差
+exp = 150
+
 
 def getBuyReverse(max, atr):
     '''
@@ -58,7 +61,7 @@ def getBuyStepAndLose(max, unit, stop, reverse, week_atr, out1):
         # 购买量
         data['amount'] = (amount) / 10
         # 入场点
-        data['in'] = tmp / 1000
+        data['in'] = (tmp + exp) / 1000
         # 出场点
         data['out'] = (tmp + week_atr) / 1000
         # 可能损失
@@ -88,7 +91,7 @@ def getSellStepAndLose(max, unit, stop, reverse, week_atr, out1):
         # 购买量
         data['amount'] = (amount) / 10
         # 入场点
-        data['in'] = tmp / 1000
+        data['in'] = (tmp - exp) / 1000
         # 出场点
         data['out'] = (tmp - week_atr) / 1000
         # 可能损失
@@ -110,7 +113,7 @@ def getBuyOuts(four_reverse_max, atr, week_atr, unit):
     if out2 > out3:
         out2, out3 = out3, out2
 
-    return out1, out2, out3
+    return out1 - exp, out2 - exp, out3 - exp
 
 
 def getSellOuts(four_reverse_max, atr, week_atr, unit):
@@ -121,7 +124,7 @@ def getSellOuts(four_reverse_max, atr, week_atr, unit):
         out1, out2 = out2, out1
     if out2 < out3:
         out2, out3 = out3, out2
-    return out1, out2, out3
+    return out1 + exp, out2 + exp, out3 + exp
 
 
 def trade(oper, max, atr, four_reverse_max, week_atr):
