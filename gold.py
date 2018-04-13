@@ -21,7 +21,7 @@ def getBuyStop(four_reverse_max, unit, reverse):
     如果反转点更高, 那么用反转点止损
     '''
     stop = four_reverse_max - unit
-    if reverse > stop:
+    if reverse < stop:
         return reverse
     else:
         return stop
@@ -40,7 +40,7 @@ def getSellStop(four_reverse_max, unit, reverse):
     获取卖出的止损点
     '''
     stop = four_reverse_max + unit
-    if reverse < stop:
+    if reverse > stop:
         return reverse
     else:
         return stop
